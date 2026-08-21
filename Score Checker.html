@@ -1,0 +1,3257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Academic Tracker</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <style>
+        /* ----- All styles are identical to the previous working version ----- */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 24px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+            overflow: hidden;
+        }
+        /* ----- Login Overlay ----- */
+        #loginOverlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            backdrop-filter: blur(8px);
+        }
+        #loginOverlay.hidden { display: none; }
+        .login-card {
+            background: white;
+            padding: 40px;
+            border-radius: 24px;
+            max-width: 400px;
+            width: 90%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            text-align: center;
+        }
+        .login-card h1 { color: #4f46e5; margin-bottom: 8px; font-size: 2rem; }
+        .login-card p { color: #64748b; margin-bottom: 25px; }
+        .login-card .input-group { margin-bottom: 15px; text-align: left; position: relative; }
+        .login-card .input-group label { display: block; margin-bottom: 5px; font-weight: 600; color: #475569; }
+        .login-card .input-group input {
+            width: 100%;
+            padding: 12px 12px 12px 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 10px;
+            font-size: 16px;
+        }
+        .login-card .input-group input:focus {
+            outline: none;
+            border-color: #4f46e5;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
+        }
+        .login-card .input-group .toggle-password {
+            position: absolute;
+            right: 12px;
+            top: 42px;
+            background: none;
+            border: none;
+            color: #94a3b8;
+            cursor: pointer;
+            font-size: 1.2rem;
+        }
+        .login-card .input-group .toggle-password:hover { color: #4f46e5; }
+        .login-card .btn-login {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-bottom: 10px;
+        }
+        .login-card .btn-login:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(79, 70, 229, 0.3);
+        }
+        .login-card .btn-register {
+            width: 100%;
+            padding: 14px;
+            background: #10b981;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .login-card .btn-register:hover { background: #059669; transform: translateY(-2px); }
+        .login-card .error-msg { color: #ef4444; margin-top: 12px; font-size: 0.9rem; }
+
+        /* ----- App Layout ----- */
+        #mainApp { display: none; flex-direction: column; min-height: 100vh; }
+
+        /* ----- Header ----- */
+        .app-header {
+            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            color: white;
+            padding: 12px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .app-header .left { display: flex; align-items: center; gap: 16px; }
+        .app-header .menu-btn {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.6rem;
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 8px;
+        }
+        .app-header .menu-btn:hover { background: rgba(255, 255, 255, 0.15); }
+        .app-header .brand {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 700;
+            font-size: 1.4rem;
+        }
+        .app-header .brand i { font-size: 1.6rem; }
+        .app-header .page-title {
+            font-size: 1rem;
+            font-weight: 500;
+            opacity: 0.85;
+            background: rgba(255, 255, 255, 0.12);
+            padding: 4px 14px;
+            border-radius: 20px;
+            margin-left: 8px;
+        }
+        .app-header .right {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .app-header .right .profile-pic-small {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid rgba(255, 255, 255, 0.4);
+            background: #ddd;
+            cursor: pointer;
+        }
+        .app-header .right .username-display { font-weight: 500; font-size: 0.95rem; }
+        .app-header .right .export-btn {
+            background: rgba(16, 185, 129, 0.25);
+            border: 1px solid rgba(16, 185, 129, 0.4);
+            color: white;
+            padding: 6px 14px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .app-header .right .export-btn:hover {
+            background: rgba(16, 185, 129, 0.4);
+            transform: scale(1.05);
+        }
+        .app-header .right .logout-btn {
+            background: rgba(255, 255, 255, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 6px 16px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .app-header .right .logout-btn:hover { background: rgba(255, 255, 255, 0.3); transform: scale(1.05); }
+
+        /* ----- Sidebar ----- */
+        .app-sidebar {
+            position: fixed;
+            top: 0;
+            left: -280px;
+            width: 280px;
+            height: 100%;
+            background: white;
+            box-shadow: 4px 0 20px rgba(0, 0, 0, 0.1);
+            transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 200;
+            padding: 24px 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            overflow-y: auto;
+        }
+        .app-sidebar.open { left: 0; }
+        .sidebar-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.4);
+            z-index: 150;
+            display: none;
+            backdrop-filter: blur(2px);
+        }
+        .sidebar-overlay.active { display: block; }
+        .app-sidebar .sidebar-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #e5e7eb;
+            margin-bottom: 16px;
+        }
+        .app-sidebar .sidebar-header img {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid #4f46e5;
+        }
+        .app-sidebar .sidebar-header .user-info { flex: 1; }
+        .app-sidebar .sidebar-header .user-info .name { font-weight: 600; color: #1e293b; font-size: 1.05rem; }
+        .app-sidebar .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 12px 16px;
+            border-radius: 12px;
+            color: #475569;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+            background: none;
+            width: 100%;
+            font-size: 1rem;
+        }
+        .app-sidebar .nav-item i { font-size: 1.2rem; width: 24px; text-align: center; color: #94a3b8; }
+        .app-sidebar .nav-item:hover { background: #f1f5f9; color: #4f46e5; }
+        .app-sidebar .nav-item:hover i { color: #4f46e5; }
+        .app-sidebar .nav-item.active { background: #eef2ff; color: #4f46e5; }
+        .app-sidebar .nav-item.active i { color: #4f46e5; }
+        .app-sidebar .sidebar-footer { margin-top: auto; padding-top: 16px; border-top: 1px solid #e5e7eb; }
+
+        /* ----- Pages ----- */
+        .page-container { display: none; padding: 0; background: white; min-height: 70vh; }
+        .page-container.active { display: block; animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .page-container .page-content { padding: 24px 28px; }
+
+        /* ----- Dashboard Layout ----- */
+        .dashboard-layout {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 0;
+            min-height: 70vh;
+        }
+        @media (min-width: 768px) {
+            .dashboard-layout { grid-template-columns: 350px 1fr; }
+        }
+        .sidebar-panel {
+            background: #f8fafc;
+            padding: 24px 20px;
+            border-right: 1px solid #e5e7eb;
+            overflow-y: auto;
+            max-height: 80vh;
+        }
+        @media (max-width: 767px) {
+            .sidebar-panel { border-right: none; border-bottom: 1px solid #e5e7eb; max-height: none; }
+        }
+        .main-panel {
+            padding: 24px 28px;
+            background: white;
+            overflow-y: auto;
+            max-height: 80vh;
+        }
+        @media (max-width: 767px) {
+            .main-panel { max-height: none; padding: 16px; }
+        }
+
+        /* ----- Stats ----- */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 16px;
+            padding: 20px 28px;
+            background: #f8fafc;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        .stat-card {
+            background: white;
+            padding: 16px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: linear-gradient(to bottom, #4f46e5, #7c3aed);
+        }
+        .stat-card .stat-value { font-size: 1.8rem; font-weight: bold; color: #4f46e5; }
+        .stat-card .stat-label { color: #64748b; font-size: 0.85rem; }
+
+        /* ----- Calendar ----- */
+        .calendar-container { max-width: 800px; margin: 0 auto; }
+        .calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            padding: 0 8px;
+        }
+        .calendar-header h2 { font-size: 1.5rem; color: #1e293b; margin: 0; }
+        .calendar-header .nav-btn {
+            background: none;
+            border: none;
+            font-size: 1.4rem;
+            cursor: pointer;
+            color: #64748b;
+            padding: 8px 12px;
+            border-radius: 8px;
+        }
+        .calendar-header .nav-btn:hover { background: #f1f5f9; color: #4f46e5; }
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 4px;
+            background: #f8fafc;
+            border-radius: 16px;
+            padding: 16px;
+        }
+        .calendar-grid .day-name {
+            text-align: center;
+            font-weight: 600;
+            color: #64748b;
+            padding: 8px 0;
+            font-size: 0.85rem;
+        }
+        .calendar-grid .day-cell {
+            aspect-ratio: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: white;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: 500;
+            color: #1e293b;
+            position: relative;
+            min-height: 50px;
+            border: 1px solid transparent;
+        }
+        .calendar-grid .day-cell:hover { background: #eef2ff; border-color: #4f46e5; }
+        .calendar-grid .day-cell.other-month { color: #cbd5e1; }
+        .calendar-grid .day-cell.today { background: #4f46e5; color: white; font-weight: 700; }
+        .calendar-grid .day-cell.today:hover { background: #4338ca; }
+        .calendar-grid .day-cell.selected { border-color: #4f46e5; box-shadow: 0 0 0 2px #4f46e5; }
+        .calendar-grid .day-cell .event-dot {
+            width: 6px;
+            height: 6px;
+            background: #ef4444;
+            border-radius: 50%;
+            position: absolute;
+            bottom: 6px;
+        }
+        .event-list-container {
+            margin-top: 24px;
+            background: #f8fafc;
+            border-radius: 16px;
+            padding: 20px;
+        }
+        .event-list-container h3 { margin-bottom: 16px; color: #1e293b; font-size: 1.1rem; }
+        .event-list-container .event-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 16px;
+            background: white;
+            border-radius: 10px;
+            margin-bottom: 8px;
+            border-left: 4px solid #4f46e5;
+        }
+        .event-list-container .event-item .event-details { display: flex; flex-direction: column; gap: 2px; }
+        .event-list-container .event-item .event-details strong { font-size: 1rem; color: #1e293b; }
+        .event-list-container .event-item .event-details .event-meta { font-size: 0.85rem; color: #64748b; }
+        .event-list-container .event-item .event-details .event-meta i { margin-right: 4px; color: #94a3b8; }
+        .event-list-container .event-item .event-details .event-desc { font-size: 0.9rem; color: #475569; margin-top: 4px; }
+        .event-list-container .event-item .delete-event {
+            background: none;
+            border: none;
+            color: #94a3b8;
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 1rem;
+        }
+        .event-list-container .event-item .delete-event:hover { color: #ef4444; background: #fef2f2; }
+        .add-event-form {
+            margin-top: 16px;
+            background: white;
+            padding: 16px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        }
+        .add-event-form .form-row { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+        .add-event-form .form-row input {
+            flex: 1;
+            padding: 10px 14px;
+            border: 1px solid #cbd5e1;
+            border-radius: 10px;
+            font-size: 0.95rem;
+            min-width: 120px;
+        }
+        .add-event-form .form-row input:focus {
+            outline: none;
+            border-color: #4f46e5;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+        .add-event-form button {
+            padding: 10px 24px;
+            background: #4f46e5;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .add-event-form button:hover { background: #4338ca; transform: translateY(-2px); }
+
+        /* ----- Notes ----- */
+        .notes-container { max-width: 800px; margin: 0 auto; }
+        .notes-container textarea {
+            width: 100%;
+            min-height: 400px;
+            padding: 20px;
+            border: 1px solid #cbd5e1;
+            border-radius: 16px;
+            font-size: 1rem;
+            line-height: 1.7;
+            resize: vertical;
+        }
+        .notes-container textarea:focus {
+            outline: none;
+            border-color: #4f46e5;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+        .notes-container .notes-actions { display: flex; gap: 12px; margin-top: 16px; }
+        .notes-container .notes-actions button {
+            padding: 10px 24px;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .notes-container .notes-actions .save-btn { background: #4f46e5; color: white; }
+        .notes-container .notes-actions .save-btn:hover { background: #4338ca; transform: translateY(-2px); }
+        .notes-container .notes-actions .clear-btn { background: #f1f5f9; color: #475569; }
+        .notes-container .notes-actions .clear-btn:hover { background: #e2e8f0; }
+        .notes-container .notes-status { margin-top: 12px; font-size: 0.9rem; color: #10b981; }
+
+        /* ----- Profile ----- */
+        .profile-container { max-width: 600px; margin: 0 auto; }
+        .profile-pic-large {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+        .profile-pic-large img {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 4px solid #e5e7eb;
+            margin-bottom: 12px;
+            background: #f1f5f9;
+        }
+        .profile-pic-large input[type="file"] { display: none; }
+        .profile-pic-large .upload-btn {
+            background: #4f46e5;
+            color: white;
+            padding: 8px 20px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+        .profile-pic-large .upload-btn:hover { background: #4338ca; }
+        .profile-stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin: 24px 0;
+        }
+        .profile-stat-card {
+            background: #f8fafc;
+            padding: 16px;
+            border-radius: 12px;
+            text-align: center;
+        }
+        .profile-stat-card .value { font-size: 1.5rem; font-weight: bold; color: #4f46e5; }
+        .profile-stat-card .label { font-size: 0.9rem; color: #64748b; }
+        .profile-password-section {
+            margin: 24px 0;
+            padding-top: 24px;
+            border-top: 1px solid #e5e7eb;
+        }
+        .profile-password-section h3 { margin-bottom: 16px; }
+        .profile-password-section .input-group { margin-bottom: 12px; }
+        .profile-password-section .input-group label {
+            display: block;
+            margin-bottom: 4px;
+            font-weight: 500;
+            color: #475569;
+            font-size: 0.9rem;
+        }
+        .profile-password-section .input-group input {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid #cbd5e1;
+            border-radius: 10px;
+            font-size: 1rem;
+        }
+        .profile-password-section .input-group input:focus {
+            outline: none;
+            border-color: #4f46e5;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+        .danger-zone {
+            border: 2px solid #fecaca;
+            padding: 20px;
+            border-radius: 12px;
+            background: #fef2f2;
+            margin-top: 24px;
+        }
+        .danger-zone h3 { color: #dc2626; margin-top: 0; }
+
+        /* ----- Common ----- */
+        h2 { color: #1e293b; margin-bottom: 16px; }
+        .btn {
+            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            color: white;
+            border: none;
+            padding: 10px 18px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.95rem;
+        }
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(79, 70, 229, 0.25); }
+        .btn-green { background: linear-gradient(135deg, #10b981, #059669); }
+        .btn-red { background: linear-gradient(135deg, #ef4444, #dc2626); }
+        .btn-blue { background: linear-gradient(135deg, #3b82f6, #2563eb); }
+        .btn-yellow { background: linear-gradient(135deg, #f59e0b, #d97706); }
+        .btn-sm { padding: 6px 14px; font-size: 0.85rem; }
+        .btn-xs { padding: 4px 10px; font-size: 0.75rem; }
+        .input-row { display: flex; gap: 10px; margin-bottom: 12px; }
+        .input-row input, .input-row select {
+            flex: 1;
+            padding: 10px 14px;
+            border: 1px solid #cbd5e1;
+            border-radius: 10px;
+            font-size: 1rem;
+        }
+        .input-row input:focus, .input-row select:focus {
+            outline: none;
+            border-color: #4f46e5;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+        .grade-badge {
+            display: inline-block;
+            padding: 2px 10px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+        .grade-A { background: #d1fae5; color: #065f46; }
+        .grade-B { background: #fef3c7; color: #92400e; }
+        .grade-C { background: #fee2e2; color: #991b1b; }
+        .grade-D { background: #dbeafe; color: #1e40af; }
+        .grade-F { background: #f3f4f6; color: #4b5563; }
+        .empty-state { text-align: center; padding: 40px 20px; color: #94a3b8; }
+        .empty-state i { font-size: 3rem; margin-bottom: 16px; opacity: 0.5; }
+
+        /* ----- Subject Cards ----- */
+        .subject-card {
+            background: white;
+            padding: 14px 16px;
+            margin-bottom: 10px;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .subject-card:hover { border-color: #4f46e5; transform: translateX(4px); }
+        .subject-card.active { border-color: #4f46e5; background: #f0f5ff; }
+        .subject-card .subject-name {
+            font-weight: 600;
+            font-size: 1.05rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .type-badge { padding: 2px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; }
+        .type-minor { background: #dbeafe; color: #1e40af; }
+        .type-major { background: #fce7f3; color: #be185d; }
+        .type-btn {
+            padding: 8px 16px;
+            background: #e5e7eb;
+            border: 2px solid #cbd5e1;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+            flex: 1;
+            text-align: center;
+        }
+        .type-btn.active { background: #4f46e5; color: white; border-color: #4f46e5; }
+        .type-btn:hover { background: #d1d5db; }
+        .type-btn.active:hover { background: #4338ca; }
+        .type-buttons { display: flex; gap: 8px; margin-top: 8px; }
+        .assignment-type-radio { display: none !important; }
+        .assignment-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+        .assignment-actions .btn-xs { padding: 4px 8px; font-size: 0.7rem; }
+
+        .period-tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+            background: #f1f5f9;
+            padding: 8px;
+            border-radius: 12px;
+            flex-wrap: wrap;
+        }
+        .period-tab {
+            padding: 8px 18px;
+            background: white;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            color: #64748b;
+            transition: all 0.2s;
+            flex: 1;
+            text-align: center;
+            min-width: 50px;
+        }
+        .period-tab:hover { border-color: #4f46e5; color: #4f46e5; }
+        .period-tab.active { background: #4f46e5; color: white; border-color: #4f46e5; }
+
+        .average-setter {
+            background: #f0f9ff;
+            border: 2px solid #bae6fd;
+            padding: 16px 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+        }
+        .average-setter .avg-input-row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+        .average-setter .avg-input-row input {
+            width: 100px;
+            padding: 8px 12px;
+            border: 2px solid #bae6fd;
+            border-radius: 8px;
+            text-align: center;
+            font-size: 1rem;
+        }
+        .average-setter .avg-input-row input:focus {
+            outline: none;
+            border-color: #0ea5e9;
+            box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1);
+        }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+        .summary-card {
+            background: #f8fafc;
+            padding: 16px;
+            border-radius: 12px;
+            border-left: 4px solid #4f46e5;
+        }
+        .summary-card .value { font-size: 1.6rem; font-weight: bold; color: #4f46e5; }
+        .summary-card .label { font-size: 0.85rem; color: #64748b; }
+
+        .edit-assignment-form {
+            background: #fef3c7;
+            border: 2px solid #fbbf24;
+            padding: 16px 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        .edit-assignment-form.active { display: block; animation: slideDown 0.25s ease; }
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .edit-assignment-form .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+        .edit-assignment-form .form-group label {
+            display: block;
+            font-weight: 500;
+            font-size: 0.85rem;
+            color: #475569;
+            margin-bottom: 4px;
+        }
+        .edit-assignment-form .form-group input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            font-size: 0.95rem;
+        }
+        .edit-assignment-form .form-group input:focus {
+            outline: none;
+            border-color: #4f46e5;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+        .edit-assignment-form .edit-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        /* ----- Assignment Panel ----- */
+        .assignment-panel {
+            background: #f1f5f9;
+            padding: 20px 24px;
+            border-radius: 14px;
+            margin-bottom: 20px;
+            border: 1px solid #e5e7eb;
+        }
+        .assignment-panel h3 {
+            margin-top: 0;
+            margin-bottom: 16px;
+            color: #1e293b;
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+        .assignment-panel .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+        .assignment-panel .form-grid .field label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: #475569;
+            margin-bottom: 4px;
+        }
+        .assignment-panel .form-grid .field input {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid #cbd5e1;
+            border-radius: 10px;
+            font-size: 0.95rem;
+            background: white;
+        }
+        .assignment-panel .form-grid .field input:focus {
+            outline: none;
+            border-color: #4f46e5;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+        .assignment-panel .add-btn {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .assignment-panel .add-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(16, 185, 129, 0.3);
+        }
+
+        /* ----- Benchmark Panel ----- */
+        .benchmark-panel {
+            background: #f0f9ff;
+            padding: 24px 28px;
+            border-radius: 14px;
+            margin-bottom: 25px;
+            border: 1px solid #bae6fd;
+        }
+        .benchmark-panel h3 {
+            margin-top: 0;
+            margin-bottom: 18px;
+            color: #0369a1;
+            font-size: 1.15rem;
+            font-weight: 600;
+        }
+        .benchmark-panel .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr 1fr;
+            gap: 18px;
+            margin-bottom: 18px;
+        }
+        .benchmark-panel .form-grid .field label {
+            display: block;
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: #475569;
+            margin-bottom: 6px;
+        }
+        .benchmark-panel .form-grid .field input,
+        .benchmark-panel .form-grid .field select {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid #cbd5e1;
+            border-radius: 10px;
+            font-size: 1rem;
+            background: white;
+        }
+        .benchmark-panel .form-grid .field input:focus,
+        .benchmark-panel .form-grid .field select:focus {
+            outline: none;
+            border-color: #4f46e5;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+        .benchmark-panel .add-btn {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #0ea5e9, #2563eb);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .benchmark-panel .add-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(14, 165, 233, 0.3);
+        }
+
+        /* ----- Comp Exam Panel ----- */
+        .compexam-panel {
+            background: #fef3c7;
+            padding: 24px 28px;
+            border-radius: 14px;
+            margin-bottom: 25px;
+            border: 1px solid #fbbf24;
+        }
+        .compexam-panel h3 {
+            margin-top: 0;
+            margin-bottom: 18px;
+            color: #92400e;
+            font-size: 1.15rem;
+            font-weight: 600;
+        }
+        .compexam-panel .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 18px;
+            margin-bottom: 18px;
+        }
+        .compexam-panel .form-grid .field label {
+            display: block;
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: #475569;
+            margin-bottom: 6px;
+        }
+        .compexam-panel .form-grid .field input {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid #cbd5e1;
+            border-radius: 10px;
+            font-size: 1rem;
+            background: white;
+        }
+        .compexam-panel .form-grid .field input:focus {
+            outline: none;
+            border-color: #4f46e5;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+        .compexam-panel .add-btn {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .compexam-panel .add-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(245, 158, 11, 0.3);
+        }
+        .compexam-display {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 16px;
+            background: white;
+            border-radius: 10px;
+            margin-top: 10px;
+            border: 1px solid #fef3c7;
+        }
+        .compexam-display .score {
+            font-weight: 700;
+            font-size: 1.1rem;
+            color: #92400e;
+        }
+
+        /* ----- Tables ----- */
+        .table-wrap { overflow-x: auto; }
+        .scores-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+        .scores-table th {
+            background: #f8fafc;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            color: #475569;
+            border-bottom: 2px solid #e5e7eb;
+            white-space: nowrap;
+        }
+        .scores-table td {
+            padding: 12px;
+            border-bottom: 1px solid #e5e7eb;
+            vertical-align: middle;
+        }
+        .scores-table tr:hover { background: #f8fafc; }
+
+        .assignment-summary {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #f8fafc;
+            padding: 12px 16px;
+            border-radius: 10px;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .assignment-summary .count { color: #475569; font-weight: 500; }
+        .assignment-summary .count strong { color: #4f46e5; }
+        .assignment-summary .avg-display { font-weight: 600; color: #4f46e5; font-size: 1.1rem; }
+
+        /* ----- Bottom Nav ----- */
+        .bottom-nav {
+            display: none;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            padding: 8px 12px;
+            box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.08);
+            z-index: 50;
+            border-top: 1px solid #e5e7eb;
+            justify-content: space-around;
+            align-items: center;
+        }
+        .bottom-nav .nav-icon {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2px;
+            background: none;
+            border: none;
+            color: #94a3b8;
+            font-size: 0.7rem;
+            cursor: pointer;
+            padding: 6px 12px;
+            border-radius: 8px;
+            transition: all 0.2s;
+            flex: 1;
+        }
+        .bottom-nav .nav-icon i { font-size: 1.3rem; }
+        .bottom-nav .nav-icon.active { color: #4f46e5; }
+        .bottom-nav .nav-icon.active i { color: #4f46e5; }
+
+        /* ----- Tutorial Overlay ----- */
+        .tut-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.65);
+            z-index: 9998;
+            pointer-events: none;
+            display: none;
+        }
+        .tut-overlay.active { display: block; }
+        .tut-highlight {
+            position: fixed;
+            border-radius: 12px;
+            box-shadow: 0 0 0 4px #4f46e5, 0 0 0 10px rgba(79, 70, 229, 0.3), 0 0 60px rgba(79, 70, 229, 0.15);
+            z-index: 9999;
+            pointer-events: none;
+            display: none;
+            transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .tut-highlight.active { display: block; animation: glowPulse 2s ease-in-out infinite; }
+        @keyframes glowPulse {
+            0%, 100% { box-shadow: 0 0 0 4px #4f46e5, 0 0 0 10px rgba(79, 70, 229, 0.3), 0 0 60px rgba(79, 70, 229, 0.15); }
+            50% { box-shadow: 0 0 0 6px #4f46e5, 0 0 0 14px rgba(79, 70, 229, 0.4), 0 0 80px rgba(79, 70, 229, 0.25); }
+        }
+        .tut-tooltip {
+            position: fixed;
+            background: white;
+            padding: 20px 24px;
+            border-radius: 16px;
+            max-width: 400px;
+            width: 90%;
+            z-index: 10000;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+            display: none;
+            pointer-events: all;
+            animation: popIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+            border: 2px solid #4f46e5;
+        }
+        .tut-tooltip.active { display: block; }
+        @keyframes popIn {
+            from { opacity: 0; transform: scale(0.9) translateY(10px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        .tut-tooltip .tt-arrow {
+            position: absolute;
+            width: 0;
+            height: 0;
+            border-left: 12px solid transparent;
+            border-right: 12px solid transparent;
+            border-top: 12px solid #4f46e5;
+            bottom: -12px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        .tut-tooltip .tt-arrow.top {
+            top: -12px;
+            border-top: none;
+            border-bottom: 12px solid #4f46e5;
+        }
+        .tut-tooltip .tt-title { font-size: 1.1rem; font-weight: 700; color: #1e293b; margin-bottom: 6px; }
+        .tut-tooltip .tt-text { color: #475569; font-size: 0.95rem; line-height: 1.5; }
+        .tut-tooltip .tt-text strong { color: #4f46e5; }
+        .tut-tooltip .tt-actions { display: flex; gap: 10px; margin-top: 16px; justify-content: flex-end; }
+        .tut-tooltip .tt-actions button {
+            padding: 8px 20px;
+            border: none;
+            border-radius: 30px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.9rem;
+        }
+        .tut-tooltip .tt-actions .tt-skip { background: #e5e7eb; color: #475569; }
+        .tut-tooltip .tt-actions .tt-skip:hover { background: #d1d5db; }
+        .tut-tooltip .tt-actions .tt-next { background: #4f46e5; color: white; }
+        .tut-tooltip .tt-actions .tt-next:hover { background: #4338ca; transform: translateY(-2px); }
+        .tut-tooltip .tt-actions .tt-done { background: #10b981; color: white; }
+        .tut-tooltip .tt-actions .tt-done:hover { background: #059669; transform: translateY(-2px); }
+        .tut-tooltip .tt-progress { margin-top: 12px; color: #94a3b8; font-size: 0.85rem; text-align: center; }
+
+        /* ----- Responsive ----- */
+        @media (max-width: 1024px) {
+            .assignment-panel .form-grid,
+            .benchmark-panel .form-grid,
+            .compexam-panel .form-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+        @media (max-width: 767px) {
+            .bottom-nav { display: flex; }
+            .app-header .page-title { display: none; }
+            .app-header .brand { font-size: 1.2rem; }
+            .app-header .right .username-display { display: none; }
+            .page-container .page-content { padding: 16px; padding-bottom: 80px; }
+            .stats-grid { padding: 12px 16px; grid-template-columns: repeat(2, 1fr); }
+            .stat-card .stat-value { font-size: 1.4rem; }
+            .dashboard-layout { grid-template-columns: 1fr; }
+            .main-panel { padding: 16px; }
+            .calendar-grid { padding: 8px; gap: 2px; }
+            .calendar-grid .day-cell { min-height: 40px; font-size: 0.85rem; }
+            .add-event-form .form-row { flex-direction: column; }
+            .add-event-form .form-row input { width: 100%; }
+            .assignment-summary { flex-direction: column; align-items: stretch; text-align: center; }
+            .assignment-panel .form-grid,
+            .benchmark-panel .form-grid,
+            .compexam-panel .form-grid {
+                grid-template-columns: 1fr;
+            }
+            .tut-tooltip { max-width: 92%; padding: 16px; }
+            .app-header .right .export-btn span { display: none; }
+        }
+        @media (max-width: 480px) {
+            .app-header { padding: 8px 12px; }
+            .app-header .brand { font-size: 1rem; }
+            .app-header .right .logout-btn span { display: none; }
+            .app-header .right .logout-btn i { margin: 0; }
+            .app-sidebar { width: 260px; left: -260px; }
+        }
+        @media (min-width: 768px) { .bottom-nav { display: none !important; } }
+
+        /* ----- Import Modal ----- */
+        #importModal .modal-content {
+            max-width: 500px;
+            text-align: center;
+        }
+        #importModal .drop-zone {
+            border: 2px dashed #cbd5e1;
+            border-radius: 12px;
+            padding: 40px 20px;
+            margin: 20px 0;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        #importModal .drop-zone:hover {
+            border-color: #4f46e5;
+            background: #f8fafc;
+        }
+        #importModal .drop-zone.dragover {
+            border-color: #4f46e5;
+            background: #eef2ff;
+        }
+        #importModal .drop-zone i {
+            font-size: 2.5rem;
+            color: #94a3b8;
+            margin-bottom: 10px;
+        }
+        #importModal .drop-zone p {
+            color: #64748b;
+        }
+        #importModal .drop-zone .file-name {
+            color: #4f46e5;
+            font-weight: 600;
+            margin-top: 5px;
+        }
+        #importModal input[type="file"] {
+            display: none;
+        }
+        #importModal .import-status {
+            margin-top: 15px;
+            font-weight: 500;
+        }
+        .import-status.success { color: #10b981; }
+        .import-status.error { color: #ef4444; }
+    </style>
+</head>
+<body>
+
+    <!-- ===== LOGIN OVERLAY ===== -->
+    <div id="loginOverlay">
+        <div class="login-card">
+            <h1>📚 Academic Tracker</h1>
+            <p>Sign in to manage your grades</p>
+            <div id="loginForm">
+                <div class="input-group"><label>Username</label><input type="text" id="loginUsername" placeholder="Enter username" /></div>
+                <div class="input-group">
+                    <label>Password</label>
+                    <input type="password" id="loginPassword" placeholder="Enter password" />
+                    <button class="toggle-password" onclick="togglePasswordVisibility()" type="button"><i class="fas fa-eye" id="passwordToggleIcon"></i></button>
+                </div>
+                <button class="btn-login" onclick="loginUser()">Login</button>
+                <button class="btn-register" onclick="registerUser()">Create New Account</button>
+                <div id="loginError" class="error-msg"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== TUTORIAL OVERLAY ===== -->
+    <div class="tut-overlay" id="tutOverlay"></div>
+    <div class="tut-highlight" id="tutHighlight"></div>
+    <div class="tut-tooltip" id="tutTooltip">
+        <div class="tt-arrow" id="ttArrow"></div>
+        <div class="tt-title" id="ttTitle">Welcome!</div>
+        <div class="tt-text" id="ttText">Let's get started.</div>
+        <div class="tt-actions">
+            <button class="tt-skip" onclick="skipTutorial()">Skip</button>
+            <button class="tt-next" id="ttNextBtn" onclick="nextTutorialStep()">Next</button>
+        </div>
+        <div class="tt-progress">Step <span id="ttStep">1</span> of <span id="ttTotal">6</span></div>
+    </div>
+
+    <!-- ===== SIDEBAR ===== -->
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+    <div class="app-sidebar" id="appSidebar">
+        <div class="sidebar-header">
+            <img id="sidebarProfilePic" src="" alt="Profile" />
+            <div class="user-info"><div class="name" id="sidebarUserName">User</div></div>
+        </div>
+        <button class="nav-item active" onclick="navigateTo('dashboard')"><i class="fas fa-th-large"></i> Dashboard</button>
+        <button class="nav-item" onclick="navigateTo('subjects')"><i class="fas fa-book"></i> Subjects</button>
+        <button class="nav-item" onclick="navigateTo('calendar')"><i class="fas fa-calendar-alt"></i> Calendar</button>
+        <button class="nav-item" onclick="navigateTo('notes')"><i class="fas fa-sticky-note"></i> Notes</button>
+        <button class="nav-item" onclick="navigateTo('profile')"><i class="fas fa-user-circle"></i> Profile</button>
+        <div class="sidebar-footer">
+            <button class="nav-item" onclick="showImportModal()"><i class="fas fa-file-import"></i> Import Data</button>
+            <button class="nav-item" onclick="logoutUser()" style="color:#ef4444;"><i class="fas fa-sign-out-alt"></i> Logout</button>
+        </div>
+    </div>
+
+    <!-- ===== MAIN APP ===== -->
+    <div class="container" id="mainApp">
+
+        <!-- HEADER -->
+        <header class="app-header">
+            <div class="left">
+                <button class="menu-btn" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
+                <div class="brand"><i class="fas fa-graduation-cap"></i> Tracker <span class="page-title" id="currentPageTitle">Dashboard</span></div>
+            </div>
+            <div class="right">
+                <img id="headerProfilePic" class="profile-pic-small" src="" alt="Profile" onclick="navigateTo('profile')" />
+                <span class="username-display" id="headerUserName">User</span>
+                <button class="export-btn" onclick="exportData()" title="Export Data">
+                    <i class="fas fa-download"></i> <span>Export</span>
+                </button>
+                <button class="logout-btn" onclick="logoutUser()"><i class="fas fa-sign-out-alt"></i> <span>Logout</span></button>
+            </div>
+        </header>
+
+        <!-- PAGE: DASHBOARD -->
+        <div class="page-container active" id="page-dashboard">
+            <div class="stats-grid">
+                <div class="stat-card"><div class="stat-value" id="totalAverage">0%</div><div class="stat-label">Total Average</div></div>
+                <div class="stat-card"><div class="stat-value" id="semester1Avg">0%</div><div class="stat-label">Semester 1</div></div>
+                <div class="stat-card"><div class="stat-value" id="semester2Avg">0%</div><div class="stat-label">Semester 2</div></div>
+                <div class="stat-card"><div class="stat-value" id="predictedAvg">0%</div><div class="stat-label">Predicted Final</div></div>
+                <div class="stat-card"><div class="stat-value" id="totalSubjects">0</div><div class="stat-label">Subjects</div></div>
+            </div>
+            <div class="dashboard-layout">
+                <div class="sidebar-panel" id="sidebar">
+                    <h2 style="margin-top:0;">Add Subject</h2>
+                    <div class="input-row">
+                        <input type="text" id="subjectInput" placeholder="Subject name" />
+                        <button class="btn" id="addSubjectBtn" onclick="addSubject()"><i class="fas fa-plus"></i> Add</button>
+                    </div>
+                    <h2>Your Subjects</h2>
+                    <div class="subjects-list" id="subjectsList"><div class="empty-state"><i class="fas fa-book"></i><p>No subjects yet</p></div></div>
+                </div>
+                <div class="main-panel" id="content">
+                    <div id="subjectDetail">
+                        <div class="empty-state"><i class="fas fa-hand-pointer"></i><h2>Select a Subject</h2><p>Choose a subject to add, edit, or manage assignments</p></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- PAGE: SUBJECTS -->
+        <div class="page-container" id="page-subjects">
+            <div class="page-content"><h2><i class="fas fa-book"></i> All Subjects</h2><div id="subjectsListFull"></div></div>
+        </div>
+
+        <!-- PAGE: CALENDAR -->
+        <div class="page-container" id="page-calendar">
+            <div class="page-content">
+                <div class="calendar-container">
+                    <div class="calendar-header">
+                        <button class="nav-btn" onclick="changeMonth(-1)"><i class="fas fa-chevron-left"></i></button>
+                        <h2 id="calendarMonthYear">June 2024</h2>
+                        <button class="nav-btn" onclick="changeMonth(1)"><i class="fas fa-chevron-right"></i></button>
+                    </div>
+                    <div class="calendar-grid" id="calendarGrid"></div>
+                    <div class="event-list-container">
+                        <h3 id="selectedDateDisplay">📅 Deadlines for today</h3>
+                        <div id="eventList"></div>
+                        <div class="add-event-form">
+                            <div style="font-size:0.9rem; color:#475569; margin-bottom:8px; font-weight:500;"><i class="fas fa-plus-circle"></i> Add Deadline for <span id="selectedDateFormDisplay">today</span></div>
+                            <div class="form-row">
+                                <input type="text" id="newEventTitle" placeholder="Deadline title..." />
+                                <input type="time" id="newEventTime" />
+                            </div>
+                            <input type="text" id="newEventDesc" placeholder="Description (optional)" style="width:100%; padding:10px 14px; border:1px solid #cbd5e1; border-radius:10px; font-size:0.95rem; margin-bottom:12px;" />
+                            <button onclick="addEvent()"><i class="fas fa-plus"></i> Add Deadline</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- PAGE: NOTES -->
+        <div class="page-container" id="page-notes">
+            <div class="page-content">
+                <div class="notes-container">
+                    <h2><i class="fas fa-sticky-note"></i> My Notes</h2>
+                    <textarea id="notesTextarea" placeholder="Write your notes here..."></textarea>
+                    <div class="notes-actions">
+                        <button class="save-btn" onclick="saveNotes()"><i class="fas fa-save"></i> Save Notes</button>
+                        <button class="clear-btn" onclick="clearNotes()"><i class="fas fa-trash"></i> Clear</button>
+                    </div>
+                    <div class="notes-status" id="notesStatus"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- PAGE: PROFILE -->
+        <div class="page-container" id="page-profile">
+            <div class="page-content">
+                <div class="profile-container">
+                    <h2><i class="fas fa-user-circle"></i> My Profile</h2>
+                    <div class="profile-pic-large">
+                        <img id="profilePagePic" src="" alt="Profile Picture" />
+                        <input type="file" id="profilePicInput" accept="image/*" onchange="uploadProfilePicPage(event)" />
+                        <label for="profilePicInput" class="upload-btn"><i class="fas fa-camera"></i> Upload Photo</label>
+                        <button class="btn-red btn-sm" onclick="removeProfilePicPage()" style="margin-top:8px;">Remove</button>
+                    </div>
+                    <div style="text-align:center; margin-bottom:8px;">
+                        <div style="font-size:1.5rem; font-weight:bold; color:#4f46e5;" id="profilePageUsername">User</div>
+                        <div style="color:#64748b;" id="profilePageMemberSince">Member since today</div>
+                    </div>
+                    <div class="profile-stats-grid" id="profileStatsGrid">
+                        <div class="profile-stat-card"><div class="value" id="profileSubjects">0</div><div class="label">Subjects</div></div>
+                        <div class="profile-stat-card"><div class="value" id="profileAssignments">0</div><div class="label">Assignments</div></div>
+                        <div class="profile-stat-card"><div class="value" id="profileAvg">0%</div><div class="label">Overall Average</div></div>
+                        <div class="profile-stat-card"><div class="value" id="profileWithScores">0</div><div class="label">With Scores</div></div>
+                    </div>
+                    <div class="profile-password-section">
+                        <h3>Change Password</h3>
+                        <div class="input-group"><label>Current Password</label><input type="password" id="profilePageCurrentPassword" placeholder="Enter current password" /></div>
+                        <div class="input-group"><label>New Password</label><input type="password" id="profilePageNewPassword" placeholder="Enter new password" /></div>
+                        <div class="input-group"><label>Confirm New Password</label><input type="password" id="profilePageConfirmPassword" placeholder="Confirm new password" /></div>
+                        <button class="btn btn-blue" onclick="changePasswordPage()"><i class="fas fa-save"></i> Update Password</button>
+                        <div id="profilePageError" style="color:#ef4444; margin-top:10px;"></div>
+                        <div id="profilePageSuccess" style="color:#10b981; margin-top:10px;"></div>
+                    </div>
+                    <div class="danger-zone">
+                        <h3><i class="fas fa-exclamation-triangle"></i> Danger Zone</h3>
+                        <p style="font-size:0.9rem; color:#64748b; margin-bottom:15px;">Once you delete your account, there is no going back. All your data will be permanently removed.</p>
+                        <button class="btn btn-red" onclick="deleteAccountPage()" style="width:100%; justify-content: center;"><i class="fas fa-trash"></i> Delete Account</button>
+                        <button class="btn btn-red" onclick="clearAllData()" style="width:100%; justify-content: center; margin-top:10px; background: linear-gradient(135deg,#dc2626,#7f1d1d);"><i class="fas fa-bomb"></i> Clear All Data (Nuclear)</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== IMPORT MODAL ===== -->
+        <div id="importModal" class="modal">
+            <div class="modal-content">
+                <h2><i class="fas fa-file-import"></i> Import Data</h2>
+                <p style="color:#64748b; margin-top:8px;">Select a previously exported <code>.json</code> file to restore your data.</p>
+                <div class="drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                    <p>Click or drag &amp; drop your file here</p>
+                    <div class="file-name" id="fileName">No file selected</div>
+                </div>
+                <input type="file" id="fileInput" accept=".json" />
+                <button class="btn btn-green" onclick="importData()" style="width:100%; margin-top:10px;">
+                    <i class="fas fa-upload"></i> Import Data
+                </button>
+                <div id="importStatus" class="import-status"></div>
+                <button class="btn" onclick="closeImportModal()" style="width:100%; margin-top:10px; background:#e5e7eb; color:#475569;">
+                    Cancel
+                </button>
+            </div>
+        </div>
+
+        <!-- BOTTOM NAV -->
+        <div class="bottom-nav" id="bottomNav">
+            <button class="nav-icon active" onclick="navigateTo('dashboard')"><i class="fas fa-th-large"></i> Home</button>
+            <button class="nav-icon" onclick="navigateTo('subjects')"><i class="fas fa-book"></i> Subjects</button>
+            <button class="nav-icon" onclick="navigateTo('calendar')"><i class="fas fa-calendar-alt"></i> Calendar</button>
+            <button class="nav-icon" onclick="navigateTo('notes')"><i class="fas fa-sticky-note"></i> Notes</button>
+            <button class="nav-icon" onclick="navigateTo('profile')"><i class="fas fa-user-circle"></i> Profile</button>
+        </div>
+    </div>
+
+    <script>
+        // ================================================================
+        //  LOCAL STORAGE KEYS
+        // ================================================================
+        const STORAGE_KEYS = {
+            USERS: 'app_users',
+            USER_DATA: 'app_data_',
+            CALENDAR: 'app_calendar_',
+            SESSION: 'app_session',
+            TUTORIAL: 'app_tutorial_'
+        };
+
+        // ================================================================
+        //  EXPORT / IMPORT FUNCTIONS (GUARANTEED WORKING)
+        // ================================================================
+
+        function exportData() {
+            if (!currentUser) {
+                alert('You are not logged in.');
+                return;
+            }
+
+            try {
+                // Gather all data for the current user
+                const users = getUsers();
+                const userData = users[currentUser] || {};
+                const data = {
+                    user: currentUser,
+                    exportDate: new Date().toISOString(),
+                    version: '2.0',
+                    subjects: subjects || [],
+                    calendarEvents: calendarEvents || {},
+                    notes: userData.notes || '',
+                    profilePic: userData.profilePic || '',
+                    created: userData.created || new Date().toISOString()
+                };
+
+                // Convert to JSON and create a Blob
+                const jsonStr = JSON.stringify(data, null, 2);
+                const blob = new Blob([jsonStr], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+
+                // Create a download link and trigger it
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `academic-tracker-${currentUser}-${new Date().toISOString().split('T')[0]}.json`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+
+                // Clean up
+                setTimeout(() => URL.revokeObjectURL(url), 1000);
+
+                alert('✅ Data exported successfully!');
+            } catch (error) {
+                alert('❌ Export failed: ' + error.message);
+                console.error('Export error:', error);
+            }
+        }
+
+        function showImportModal() {
+            document.getElementById('importModal').style.display = 'flex';
+            document.getElementById('fileName').textContent = 'No file selected';
+            document.getElementById('importStatus').textContent = '';
+            document.getElementById('importStatus').className = 'import-status';
+            document.getElementById('fileInput').value = '';
+            document.getElementById('dropZone').classList.remove('dragover');
+        }
+
+        function closeImportModal() {
+            document.getElementById('importModal').style.display = 'none';
+        }
+
+        // File input handling
+        document.getElementById('fileInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                document.getElementById('fileName').textContent = file.name + ' (' + (file.size / 1024).toFixed(1) + ' KB)';
+            }
+        });
+
+        // Drag and drop
+        const dropZone = document.getElementById('dropZone');
+        if (dropZone) {
+            dropZone.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                this.classList.add('dragover');
+            });
+            dropZone.addEventListener('dragleave', function(e) {
+                e.preventDefault();
+                this.classList.remove('dragover');
+            });
+            dropZone.addEventListener('drop', function(e) {
+                e.preventDefault();
+                this.classList.remove('dragover');
+                const file = e.dataTransfer.files[0];
+                if (file) {
+                    document.getElementById('fileInput').files = e.dataTransfer.files;
+                    document.getElementById('fileName').textContent = file.name + ' (' + (file.size / 1024).toFixed(1) +
+                        ' KB)';
+                }
+            });
+        }
+
+        function importData() {
+            const fileInput = document.getElementById('fileInput');
+            const file = fileInput.files[0];
+            const statusEl = document.getElementById('importStatus');
+
+            if (!file) {
+                statusEl.textContent = '❌ Please select a file first.';
+                statusEl.className = 'import-status error';
+                return;
+            }
+
+            // Check file extension
+            if (!file.name.endsWith('.json')) {
+                statusEl.textContent = '❌ Please select a .json file.';
+                statusEl.className = 'import-status error';
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+
+                    // Validate data
+                    if (!data.user || !data.subjects || !Array.isArray(data.subjects)) {
+                        statusEl.textContent = '❌ Invalid file format. Please export a valid file from this app.';
+                        statusEl.className = 'import-status error';
+                        return;
+                    }
+
+                    // Check if the user exists
+                    const users = getUsers();
+                    if (!users[data.user]) {
+                        statusEl.textContent = '❌ User "' + data.user +
+                            '" does not exist. Please create the account first.';
+                        statusEl.className = 'import-status error';
+                        return;
+                    }
+
+                    // Confirm import
+                    if (data.user !== currentUser) {
+                        if (!confirm(
+                                `⚠️ This file belongs to user "${data.user}". You are logged in as "${currentUser}". Importing will OVERWRITE your current data. Continue?`
+                                )) {
+                            statusEl.textContent = '❌ Import cancelled.';
+                            statusEl.className = 'import-status error';
+                            return;
+                        }
+                    }
+
+                    // ---- IMPORT DATA ----
+                    // 1. Subjects
+                    subjects = data.subjects;
+
+                    // 2. Calendar events
+                    if (data.calendarEvents) {
+                        calendarEvents = data.calendarEvents;
+                        saveCalendarEvents();
+                    }
+
+                    // 3. User profile data (notes, profile pic)
+                    const usersUpdate = getUsers();
+                    if (usersUpdate[currentUser]) {
+                        if (data.notes !== undefined) {
+                            usersUpdate[currentUser].notes = data.notes;
+                        }
+                        if (data.profilePic !== undefined) {
+                            usersUpdate[currentUser].profilePic = data.profilePic;
+                        }
+                        if (data.created && !usersUpdate[currentUser].created) {
+                            usersUpdate[currentUser].created = data.created;
+                        }
+                        saveUsers(usersUpdate);
+                    }
+
+                    // 4. Save all data
+                    saveData();
+
+                    // 5. Update UI
+                    updateDashboard();
+                    renderSubjects();
+                    renderSubjectsFull();
+                    updateProfileStats();
+                    if (selectedSubjectId) renderSubjectDetail();
+
+                    // 6. Update calendar if visible
+                    if (document.getElementById('page-calendar').classList.contains('active')) {
+                        renderCalendar();
+                    }
+                    if (document.getElementById('page-notes').classList.contains('active')) {
+                        loadNotes();
+                    }
+
+                    // 7. Show success
+                    statusEl.textContent = '✅ Data imported successfully! ' + data.subjects.length +
+                        ' subjects restored.';
+                    statusEl.className = 'import-status success';
+
+                    // 8. Refresh after delay
+                    setTimeout(() => {
+                        closeImportModal();
+                        alert('✅ Data imported successfully! Refreshing page...');
+                        location.reload();
+                    }, 1200);
+
+                } catch (err) {
+                    statusEl.textContent = '❌ Error reading file: ' + err.message;
+                    statusEl.className = 'import-status error';
+                    console.error('Import error:', err);
+                }
+            };
+
+            reader.onerror = function() {
+                statusEl.textContent = '❌ Failed to read file.';
+                statusEl.className = 'import-status error';
+            };
+
+            reader.readAsText(file);
+        }
+
+        // Close import modal on outside click
+        document.getElementById('importModal').addEventListener('click', function(e) {
+            if (e.target === this) closeImportModal();
+        });
+
+        // ================================================================
+        //  NUCLEAR OPTION
+        // ================================================================
+        function clearAllData() {
+            if (!confirm('⚠️ NUCLEAR OPTION: This will erase ALL data for ALL users. This cannot be undone!')) return;
+            if (!confirm('⚠️ FINAL WARNING: All data will be permanently deleted. Continue?')) return;
+            localStorage.clear();
+            document.getElementById('mainApp').style.display = 'none';
+            document.getElementById('loginOverlay').classList.remove('hidden');
+            document.getElementById('loginUsername').value = '';
+            document.getElementById('loginPassword').value = '';
+            document.getElementById('loginError').textContent = '';
+            currentUser = null;
+            alert('✅ All data has been permanently cleared.');
+            location.reload();
+        }
+
+        // ================================================================
+        //  LOGIN SYSTEM
+        // ================================================================
+        let currentUser = null;
+
+        function getUsers() {
+            const stored = localStorage.getItem(STORAGE_KEYS.USERS);
+            return stored ? JSON.parse(stored) : {};
+        }
+
+        function saveUsers(users) {
+            localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(users));
+        }
+
+        function registerUser() {
+            const username = document.getElementById('loginUsername').value.trim();
+            const password = document.getElementById('loginPassword').value.trim();
+            const errorEl = document.getElementById('loginError');
+            if (!username || !password) { errorEl.textContent = 'Please fill in both fields.'; return; }
+            const users = getUsers();
+            if (users[username]) { errorEl.textContent = 'Username already exists.'; return; }
+            users[username] = {
+                password: btoa(password),
+                created: new Date().toISOString(),
+                profilePic: '',
+                notes: ''
+            };
+            saveUsers(users);
+            errorEl.textContent = '';
+            alert('Account created! Please log in.');
+            document.getElementById('loginPassword').value = '';
+        }
+
+        function loginUser() {
+            const username = document.getElementById('loginUsername').value.trim();
+            const password = document.getElementById('loginPassword').value.trim();
+            const errorEl = document.getElementById('loginError');
+            if (!username || !password) { errorEl.textContent = 'Please fill in both fields.'; return; }
+            const users = getUsers();
+            const user = users[username];
+            if (!user || user.password !== btoa(password)) { errorEl.textContent = 'Invalid username or password.'; return; }
+            errorEl.textContent = '';
+            currentUser = username;
+            localStorage.setItem(STORAGE_KEYS.SESSION, username);
+            showMainApp();
+        }
+
+        function logoutUser() {
+            if (confirm('Are you sure you want to logout?')) {
+                currentUser = null;
+                localStorage.removeItem(STORAGE_KEYS.SESSION);
+                document.getElementById('mainApp').style.display = 'none';
+                document.getElementById('loginOverlay').classList.remove('hidden');
+                document.getElementById('loginUsername').value = '';
+                document.getElementById('loginPassword').value = '';
+                document.getElementById('loginError').textContent = '';
+                closeSidebar();
+                closeTutorial();
+            }
+        }
+
+        function checkLogin() {
+            const savedUser = localStorage.getItem(STORAGE_KEYS.SESSION);
+            if (savedUser) {
+                const users = getUsers();
+                if (users[savedUser]) {
+                    currentUser = savedUser;
+                    showMainApp();
+                    return;
+                }
+            }
+            document.getElementById('loginOverlay').classList.remove('hidden');
+            document.getElementById('mainApp').style.display = 'none';
+        }
+
+        function showMainApp() {
+            document.getElementById('loginOverlay').classList.add('hidden');
+            document.getElementById('mainApp').style.display = 'flex';
+            document.getElementById('headerUserName').textContent = currentUser;
+            document.getElementById('sidebarUserName').textContent = currentUser;
+            document.getElementById('profilePageUsername').textContent = currentUser;
+
+            const users = getUsers();
+            const user = users[currentUser];
+            if (user && user.profilePic) {
+                document.getElementById('headerProfilePic').src = user.profilePic;
+                document.getElementById('sidebarProfilePic').src = user.profilePic;
+                document.getElementById('profilePagePic').src = user.profilePic;
+            }
+            if (user && user.created) {
+                document.getElementById('profilePageMemberSince').textContent = 'Member since ' + new Date(user.created)
+                    .toLocaleDateString();
+            }
+
+            if (window.innerWidth <= 767) { document.getElementById('bottomNav').style.display = 'flex'; }
+
+            initApp();
+            navigateTo('dashboard');
+
+            setTimeout(() => {
+                const flag = STORAGE_KEYS.TUTORIAL + currentUser;
+                if (!localStorage.getItem(flag)) {
+                    tutorialStep = 0;
+                    tutorialActive = true;
+                    showTutorialStep();
+                }
+            }, 600);
+        }
+
+        function togglePasswordVisibility() {
+            const passwordInput = document.getElementById('loginPassword');
+            const icon = document.getElementById('passwordToggleIcon');
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                icon.className = 'fas fa-eye-slash';
+            } else {
+                passwordInput.type = 'password';
+                icon.className = 'fas fa-eye';
+            }
+        }
+
+        // ================================================================
+        //  NAVIGATION
+        // ================================================================
+        function toggleSidebar() {
+            document.getElementById('appSidebar').classList.toggle('open');
+            document.getElementById('sidebarOverlay').classList.toggle('active');
+        }
+
+        function closeSidebar() {
+            document.getElementById('appSidebar').classList.remove('open');
+            document.getElementById('sidebarOverlay').classList.remove('active');
+        }
+
+        function navigateTo(page) {
+            closeSidebar();
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.bottom-nav .nav-icon').forEach(el => el.classList.remove('active'));
+
+            const titles = { dashboard: 'Dashboard', subjects: 'Subjects', calendar: 'Calendar', notes: 'Notes',
+                profile: 'Profile' };
+            document.getElementById('currentPageTitle').textContent = titles[page] || 'App';
+
+            document.querySelectorAll('.page-container').forEach(el => el.classList.remove('active'));
+            const target = document.getElementById('page-' + page);
+            if (target) target.classList.add('active');
+
+            document.querySelectorAll(`.nav-item[onclick*="${page}"]`).forEach(el => el.classList.add('active'));
+            document.querySelectorAll(`.bottom-nav .nav-icon[onclick*="${page}"]`).forEach(el => el.classList.add('active'));
+
+            if (page === 'calendar') renderCalendar();
+            if (page === 'notes') loadNotes();
+            if (page === 'profile') updateProfileStats();
+            if (page === 'subjects') renderSubjectsFull();
+            if (page === 'dashboard') {
+                updateDashboard();
+                renderSubjects();
+                if (selectedSubjectId) renderSubjectDetail();
+            }
+        }
+
+        // ================================================================
+        //  TUTORIAL
+        // ================================================================
+        let tutorialStep = 0;
+        let tutorialActive = false;
+        let waitingForAction = false;
+
+        const tutorialSteps = [{
+            title: '👋 Welcome!',
+            text: 'Click <strong>"Start"</strong> to begin.',
+            target: null,
+            nextText: 'Start'
+        }, {
+            title: '📝 Add a Subject',
+            text: 'Type a subject name and click <strong>"Add"</strong>.',
+            target: 'subjectInput',
+            nextText: 'Next'
+        }, {
+            title: '👆 Select Your Subject',
+            text: 'Click on the subject card you just created.',
+            target: 'firstSubject',
+            nextText: 'Next'
+        }, {
+            title: '📊 Choose a Quarter',
+            text: 'Click on <strong>Q1</strong> (or any quarter).',
+            target: 'periodTabQ1',
+            nextText: 'Next'
+        }, {
+            title: '✏️ Add an Assignment',
+            text: 'Fill in Name, Score, Max and click <strong>"Add Assignment"</strong>.',
+            target: 'assignmentName',
+            nextText: 'Next'
+        }, {
+            title: '🎯 You\'re All Set!',
+            text: 'Explore Calendar, Notes, and Profile. Good luck! 🚀',
+            target: null,
+            nextText: 'Finish'
+        }];
+
+        function showTutorialStep() {
+            if (!tutorialActive) return;
+            const step = tutorialSteps[tutorialStep];
+            if (!step) return;
+
+            const overlay = document.getElementById('tutOverlay');
+            const highlight = document.getElementById('tutHighlight');
+            const tooltip = document.getElementById('tutTooltip');
+            const arrow = document.getElementById('ttArrow');
+
+            highlight.classList.remove('active');
+            highlight.style.display = 'none';
+            tooltip.classList.remove('active');
+
+            document.getElementById('ttTitle').textContent = step.title;
+            document.getElementById('ttText').innerHTML = step.text;
+            document.getElementById('ttStep').textContent = tutorialStep + 1;
+            document.getElementById('ttTotal').textContent = tutorialSteps.length;
+
+            const nextBtn = document.getElementById('ttNextBtn');
+            if (tutorialStep === tutorialSteps.length - 1) {
+                nextBtn.textContent = '🎉 Finish';
+                nextBtn.className = 'tt-done';
+            } else {
+                nextBtn.textContent = step.nextText || 'Next';
+                nextBtn.className = 'tt-next';
+            }
+
+            overlay.classList.add('active');
+
+            let targetEl = null;
+            if (step.target === 'firstSubject') {
+                const cards = document.querySelectorAll('.subject-card');
+                if (cards.length > 0) targetEl = cards[0];
+            } else if (step.target === 'periodTabQ1') {
+                const tabs = document.querySelectorAll('.period-tab');
+                if (tabs.length > 0) targetEl = tabs[0];
+            } else if (step.target) {
+                targetEl = document.getElementById(step.target);
+            }
+
+            if (targetEl) {
+                const rect = targetEl.getBoundingClientRect();
+                const padding = 12;
+                highlight.style.left = (rect.left - padding) + 'px';
+                highlight.style.top = (rect.top - padding) + 'px';
+                highlight.style.width = (rect.width + padding * 2) + 'px';
+                highlight.style.height = (rect.height + padding * 2) + 'px';
+                highlight.classList.add('active');
+                highlight.style.display = 'block';
+
+                const vh = window.innerHeight;
+                const vw = window.innerWidth;
+                let ttLeft, ttTop, arrowDir = 'bottom';
+
+                ttLeft = rect.left + rect.width / 2 - 190;
+                ttTop = rect.bottom + 20;
+
+                if (ttTop + 250 > vh) {
+                    ttTop = rect.top - 280;
+                    arrowDir = 'top';
+                }
+                if (ttLeft < 10) ttLeft = 10;
+                if (ttLeft + 380 > vw) ttLeft = vw - 390;
+                if (rect.width < 100) {
+                    ttLeft = rect.left + rect.width / 2 - 190;
+                }
+
+                tooltip.style.left = ttLeft + 'px';
+                tooltip.style.top = ttTop + 'px';
+                tooltip.style.transform = 'none';
+                arrow.className = 'tt-arrow';
+                if (arrowDir === 'top') arrow.classList.add('top');
+                tooltip.classList.add('active');
+
+                if (step.target === 'subjectInput') {
+                    setTimeout(() => document.getElementById('subjectInput').focus(), 300);
+                }
+                if (rect.top < 0 || rect.bottom > vh) {
+                    targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            } else {
+                tooltip.style.left = '50%';
+                tooltip.style.top = '50%';
+                tooltip.style.transform = 'translate(-50%, -50%)';
+                tooltip.classList.add('active');
+                highlight.style.display = 'none';
+            }
+
+            waitingForAction = step.target !== null;
+        }
+
+        function nextTutorialStep() {
+            const step = tutorialSteps[tutorialStep];
+
+            if (step.target === 'subjectInput') {
+                const input = document.getElementById('subjectInput');
+                if (input && input.value.trim() === '') {
+                    alert('👉 Please type a subject name and click "Add" first.');
+                    return;
+                }
+            }
+            if (step.target === 'firstSubject') {
+                const cards = document.querySelectorAll('.subject-card');
+                if (cards.length === 0) {
+                    alert('👉 Please add a subject first.');
+                    return;
+                }
+                const active = document.querySelector('.subject-card.active');
+                if (!active) {
+                    alert('👉 Please click on your subject card to select it.');
+                    return;
+                }
+            }
+            if (step.target === 'periodTabQ1') {
+                const tabs = document.querySelectorAll('.period-tab');
+                let hasActive = false;
+                tabs.forEach(t => { if (t.classList.contains('active')) hasActive = true; });
+                if (!hasActive) {
+                    alert('👉 Please click on a quarter tab (Q1, Q2, Q3, or Q4).');
+                    return;
+                }
+            }
+            if (step.target === 'assignmentName') {
+                const table = document.querySelector('.scores-table tbody');
+                if (table) {
+                    const rows = table.querySelectorAll('tr');
+                    let hasAssignment = false;
+                    rows.forEach(row => {
+                        if (!row.textContent.includes('No assignments') && !row.textContent.includes('Manual average') &&
+                            row.textContent.trim() !== '') {
+                            hasAssignment = true;
+                        }
+                    });
+                    if (!hasAssignment) {
+                        alert(
+                            '👉 Please add an assignment first (fill in Name, Score, Max and click "Add Assignment").');
+                        return;
+                    }
+                }
+            }
+
+            if (tutorialStep < tutorialSteps.length - 1) {
+                tutorialStep++;
+                showTutorialStep();
+            } else {
+                closeTutorial();
+            }
+        }
+
+        function skipTutorial() {
+            if (confirm('Skip the interactive tutorial?')) {
+                closeTutorial();
+            }
+        }
+
+        function closeTutorial() {
+            tutorialActive = false;
+            document.getElementById('tutOverlay').classList.remove('active');
+            document.getElementById('tutHighlight').classList.remove('active');
+            document.getElementById('tutHighlight').style.display = 'none';
+            document.getElementById('tutTooltip').classList.remove('active');
+            localStorage.setItem(STORAGE_KEYS.TUTORIAL + currentUser, 'true');
+            waitingForAction = false;
+        }
+
+        document.addEventListener('click', function(e) {
+            if (!tutorialActive || !waitingForAction) return;
+            const step = tutorialSteps[tutorialStep];
+            if (!step) return;
+
+            if (step.target === 'firstSubject' && e.target.closest('.subject-card')) {
+                setTimeout(() => { if (tutorialStep === 2) nextTutorialStep(); }, 400);
+            }
+            if (step.target === 'periodTabQ1' && e.target.closest('.period-tab')) {
+                setTimeout(() => { if (tutorialStep === 3) nextTutorialStep(); }, 400);
+            }
+            if (step.target === 'assignmentName' && e.target.closest('.add-btn')) {
+                setTimeout(() => { if (tutorialStep === 4) nextTutorialStep(); }, 600);
+            }
+        });
+
+        document.getElementById('addSubjectBtn').addEventListener('click', function() {
+            if (tutorialActive && waitingForAction && tutorialStep === 1) {
+                setTimeout(() => { if (tutorialStep === 1) nextTutorialStep(); }, 400);
+            }
+        });
+        document.getElementById('subjectInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && tutorialActive && waitingForAction && tutorialStep === 1) {
+                setTimeout(() => { if (tutorialStep === 1) nextTutorialStep(); }, 400);
+            }
+        });
+
+        // ================================================================
+        //  PROFILE PAGE
+        // ================================================================
+        function updateProfileStats() {
+            const totalSubjects = subjects.length;
+            let totalAssignments = 0;
+            let totalBenchmarks = 0;
+            subjects.forEach(s => {
+                ['q1', 'q2', 'q3', 'q4'].forEach(q => {
+                    totalAssignments += s.quarters[q].minor.length + s.quarters[q].major.length;
+                    totalBenchmarks += s.benchmarks ? s.benchmarks.filter(b => b.quarter === q).length : 0;
+                });
+            });
+            const overallAvg = calculateOverallAverages().total;
+            const withScores = subjects.filter(s => s.averages.total > 0).length;
+
+            document.getElementById('profileSubjects').textContent = totalSubjects;
+            document.getElementById('profileAssignments').textContent = totalAssignments + totalBenchmarks;
+            document.getElementById('profileAvg').textContent = overallAvg + '%';
+            document.getElementById('profileWithScores').textContent = withScores;
+        }
+
+        function uploadProfilePicPage(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const base64 = e.target.result;
+                const users = getUsers();
+                if (users[currentUser]) {
+                    users[currentUser].profilePic = base64;
+                    saveUsers(users);
+                    document.getElementById('headerProfilePic').src = base64;
+                    document.getElementById('sidebarProfilePic').src = base64;
+                    document.getElementById('profilePagePic').src = base64;
+                    alert('Profile picture updated!');
+                }
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function removeProfilePicPage() {
+            if (!confirm('Remove profile picture?')) return;
+            const users = getUsers();
+            if (users[currentUser]) {
+                users[currentUser].profilePic = '';
+                saveUsers(users);
+                document.getElementById('headerProfilePic').src = '';
+                document.getElementById('sidebarProfilePic').src = '';
+                document.getElementById('profilePagePic').src = '';
+                alert('Profile picture removed.');
+            }
+        }
+
+        function changePasswordPage() {
+            const current = document.getElementById('profilePageCurrentPassword').value;
+            const newPass = document.getElementById('profilePageNewPassword').value;
+            const confirm = document.getElementById('profilePageConfirmPassword').value;
+            const errorEl = document.getElementById('profilePageError');
+            const successEl = document.getElementById('profilePageSuccess');
+            errorEl.textContent = '';
+            successEl.textContent = '';
+            if (!current || !newPass || !confirm) { errorEl.textContent = 'Please fill in all fields.'; return; }
+            if (newPass.length < 4) { errorEl.textContent = 'New password must be at least 4 characters.'; return; }
+            if (newPass !== confirm) { errorEl.textContent = 'New passwords do not match.'; return; }
+            const users = getUsers();
+            const user = users[currentUser];
+            if (!user || user.password !== btoa(current)) { errorEl.textContent = 'Current password is incorrect.'; return; }
+            user.password = btoa(newPass);
+            saveUsers(users);
+            successEl.textContent = 'Password updated successfully!';
+            document.getElementById('profilePageCurrentPassword').value = '';
+            document.getElementById('profilePageNewPassword').value = '';
+            document.getElementById('profilePageConfirmPassword').value = '';
+        }
+
+        // ================================================================
+        //  DELETE ACCOUNT
+        // ================================================================
+        function deleteAccountPage() {
+            if (!currentUser) {
+                alert('You are not logged in.');
+                return;
+            }
+            const confirmDelete = confirm(
+                `⚠️ Are you sure you want to permanently delete your account "${currentUser}" and all of your data? This action cannot be undone!`
+            );
+            if (!confirmDelete) return;
+            if (!confirm(`⚠️ This is your final warning. Click "OK" to permanently delete "${currentUser}".`)) {
+                alert('❌ Deletion cancelled.');
+                return;
+            }
+            const users = getUsers();
+            const usernameToDelete = currentUser;
+            if (users[usernameToDelete]) {
+                delete users[usernameToDelete];
+            }
+            localStorage.clear();
+            saveUsers(users);
+            currentUser = null;
+            document.getElementById('mainApp').style.display = 'none';
+            document.getElementById('loginOverlay').classList.remove('hidden');
+            document.getElementById('loginUsername').value = '';
+            document.getElementById('loginPassword').value = '';
+            document.getElementById('loginError').textContent = '';
+            closeSidebar();
+            closeTutorial();
+            alert(`✅ Account "${usernameToDelete}" and all associated data have been permanently deleted.`);
+        }
+
+        // ================================================================
+        //  NOTES
+        // ================================================================
+        function loadNotes() {
+            const users = getUsers();
+            const user = users[currentUser];
+            const notes = user && user.notes ? user.notes : '';
+            document.getElementById('notesTextarea').value = notes;
+            document.getElementById('notesStatus').textContent = '';
+        }
+
+        function saveNotes() {
+            const text = document.getElementById('notesTextarea').value;
+            const users = getUsers();
+            if (users[currentUser]) {
+                users[currentUser].notes = text;
+                saveUsers(users);
+                document.getElementById('notesStatus').textContent = '✅ Notes saved at ' + new Date().toLocaleTimeString();
+                document.getElementById('notesStatus').style.color = '#10b981';
+            } else {
+                document.getElementById('notesStatus').textContent = '❌ Error saving notes.';
+                document.getElementById('notesStatus').style.color = '#ef4444';
+            }
+        }
+
+        function clearNotes() {
+            if (confirm('Clear all notes?')) {
+                document.getElementById('notesTextarea').value = '';
+                saveNotes();
+                document.getElementById('notesStatus').textContent = '🗑️ Notes cleared.';
+                document.getElementById('notesStatus').style.color = '#f59e0b';
+            }
+        }
+
+        // ================================================================
+        //  CALENDAR
+        // ================================================================
+        let currentDate = new Date();
+        let selectedDate = new Date();
+        let calendarEvents = {};
+
+        function loadCalendarEvents() {
+            const key = STORAGE_KEYS.CALENDAR + currentUser;
+            const stored = localStorage.getItem(key);
+            if (stored) {
+                try {
+                    const parsed = JSON.parse(stored);
+                    calendarEvents = parsed;
+                } catch (e) { calendarEvents = {}; }
+            } else { calendarEvents = {}; }
+        }
+
+        function saveCalendarEvents() {
+            const key = STORAGE_KEYS.CALENDAR + currentUser;
+            localStorage.setItem(key, JSON.stringify(calendarEvents));
+        }
+
+        function renderCalendar() {
+            loadCalendarEvents();
+            const year = currentDate.getFullYear();
+            const month = currentDate.getMonth();
+            document.getElementById('calendarMonthYear').textContent = new Date(year, month).toLocaleDateString('en-US', {
+                month: 'long',
+                year: 'numeric'
+            });
+            const firstDay = new Date(year, month, 1).getDay();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            const daysInPrevMonth = new Date(year, month, 0).getDate();
+            let gridHtml = '';
+            ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].forEach(name => { gridHtml +=
+                    `<div class="day-name">${name}</div>`; });
+            for (let i = firstDay - 1; i >= 0; i--) { const day = daysInPrevMonth - i; gridHtml +=
+                    `<div class="day-cell other-month">${day}</div>`; }
+            const today = new Date();
+            for (let d = 1; d <= daysInMonth; d++) {
+                const dateObj = new Date(year, month, d);
+                const dateStr = dateObj.toISOString().split('T')[0];
+                const isToday = (d === today.getDate() && month === today.getMonth() && year === today.getFullYear());
+                const hasEvent = calendarEvents[dateStr] && calendarEvents[dateStr].length > 0;
+                const isSelected = (d === selectedDate.getDate() && month === selectedDate.getMonth() && year ===
+                    selectedDate.getFullYear());
+                let classes = 'day-cell';
+                if (isToday) classes += ' today';
+                if (isSelected) classes += ' selected';
+                gridHtml +=
+                    `<div class="${classes}" onclick="selectDate(${year}, ${month}, ${d})">${d}${hasEvent ? '<div class="event-dot"></div>' : ''}</div>`;
+            }
+            const totalCells = firstDay + daysInMonth;
+            const remainingCells = (7 - (totalCells % 7)) % 7;
+            for (let d = 1; d <= remainingCells; d++) { gridHtml += `<div class="day-cell other-month">${d}</div>`; }
+            document.getElementById('calendarGrid').innerHTML = gridHtml;
+            if (!selectedDate || selectedDate.getMonth() !== month || selectedDate.getFullYear() !== year) {
+                selectedDate = new Date(year, month, 1);
+            }
+            updateEventList();
+            updateSelectedDateDisplay();
+        }
+
+        function changeMonth(delta) { currentDate.setMonth(currentDate.getMonth() + delta);
+            renderCalendar(); }
+
+        function selectDate(year, month, day) { selectedDate = new Date(year, month, day);
+            renderCalendar(); }
+
+        function updateSelectedDateDisplay() {
+            const displayDate = selectedDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric',
+                year: 'numeric' });
+            document.getElementById('selectedDateDisplay').textContent = `📅 Deadlines for ${displayDate}`;
+            document.getElementById('selectedDateFormDisplay').textContent = displayDate;
+        }
+
+        function updateEventList() {
+            const dateStr = selectedDate.toISOString().split('T')[0];
+            updateSelectedDateDisplay();
+            const events = calendarEvents[dateStr] || [];
+            const container = document.getElementById('eventList');
+            if (events.length === 0) {
+                container.innerHTML = `<p style="color:#94a3b8; padding:16px 0;">No deadlines for this day.</p>`;
+            } else {
+                container.innerHTML = events.map((ev, index) => `
+                            <div class="event-item">
+                                <div class="event-details">
+                                    <strong>${ev.title}</strong>
+                                    <div class="event-meta">${ev.time ? `<i class="far fa-clock"></i> ${ev.time}` : ''}${ev.time && ev.description ? ' · ' : ''}${ev.description ? `<i class="far fa-sticky-note"></i> ${ev.description}` : ''}</div>
+                                </div>
+                                <button class="delete-event" onclick="deleteEvent(${index})"><i class="fas fa-times"></i></button>
+                            </div>
+                        `).join('');
+            }
+        }
+
+        function addEvent() {
+            const title = document.getElementById('newEventTitle').value.trim();
+            const time = document.getElementById('newEventTime').value;
+            const desc = document.getElementById('newEventDesc').value.trim();
+            if (!title) { alert('Please enter a title for the deadline.'); return; }
+            const dateStr = selectedDate.toISOString().split('T')[0];
+            if (!calendarEvents[dateStr]) { calendarEvents[dateStr] = []; }
+            calendarEvents[dateStr].push({ id: Date.now(), title, time, description: desc, date: dateStr });
+            saveCalendarEvents();
+            document.getElementById('newEventTitle').value = '';
+            document.getElementById('newEventTime').value = '';
+            document.getElementById('newEventDesc').value = '';
+            renderCalendar();
+        }
+
+        function deleteEvent(index) {
+            const dateStr = selectedDate.toISOString().split('T')[0];
+            if (calendarEvents[dateStr]) {
+                calendarEvents[dateStr].splice(index, 1);
+                if (calendarEvents[dateStr].length === 0) { delete calendarEvents[dateStr]; }
+                saveCalendarEvents();
+                renderCalendar();
+            }
+        }
+
+        // ================================================================
+        //  APP LOGIC (Subjects, Assignments, Averages, Benchmarks, Comp Exam)
+        // ================================================================
+
+        function getDataKey() { return STORAGE_KEYS.USER_DATA + currentUser; }
+
+        let subjects = [];
+        let selectedSubjectId = null;
+        let selectedPeriod = 'Q1';
+        let editingAssignment = null;
+
+        function initApp() {
+            const stored = localStorage.getItem(getDataKey());
+            subjects = stored ? JSON.parse(stored) : [];
+            subjects.forEach(subject => {
+                if (!subject.quarters) {
+                    subject.quarters = { q1: { minor: [], major: [], manualAverage: null }, q2: { minor: [],
+                            major: [], manualAverage: null }, q3: { minor: [], major: [],
+                            manualAverage: null }, q4: { minor: [], major: [], manualAverage: null } };
+                }
+                if (!subject.averages) {
+                    subject.averages = { q1: 0, q2: 0, q3: 0, q4: 0, semester1: 0, semester2: 0, total: 0 };
+                }
+                if (!subject.grades) {
+                    subject.grades = { q1: 'N/A', q2: 'N/A', q3: 'N/A', q4: 'N/A', semester1: 'N/A',
+                        semester2: 'N/A', total: 'N/A' };
+                }
+                if (!subject.benchmarks) {
+                    subject.benchmarks = [];
+                }
+                if (!subject.benchmarkAvg) {
+                    subject.benchmarkAvg = 0;
+                }
+                if (!subject.compExam) {
+                    subject.compExam = { score: null, max: null, percentage: null };
+                }
+                calculateSubjectAverages(subject);
+                calculateBenchmarkAverage(subject);
+            });
+            updateDashboard();
+            renderSubjects();
+            renderSubjectsFull();
+            updateProfileStats();
+        }
+
+        function saveData() {
+            localStorage.setItem(getDataKey(), JSON.stringify(subjects));
+            updateDashboard();
+            renderSubjects();
+            renderSubjectsFull();
+            updateProfileStats();
+        }
+
+        // ----- Benchmark Functions -----
+        function calculateBenchmarkAverage(subject) {
+            if (!subject.benchmarks || subject.benchmarks.length === 0) {
+                subject.benchmarkAvg = 0;
+                return;
+            }
+            const total = subject.benchmarks.reduce((sum, b) => sum + parseFloat(b.percentage), 0);
+            subject.benchmarkAvg = parseFloat((total / subject.benchmarks.length).toFixed(1));
+        }
+
+        function addBenchmark() {
+            if (!selectedSubjectId) {
+                alert('Please select a subject first.');
+                return;
+            }
+            const name = document.getElementById('benchmarkName')?.value.trim();
+            const score = document.getElementById('benchmarkScore')?.value;
+            const max = document.getElementById('benchmarkMax')?.value;
+            const quarter = document.getElementById('benchmarkQuarter')?.value;
+            if (!name || !score || !max || !quarter) {
+                alert('Please fill in all fields.');
+                return;
+            }
+            const scoreNum = parseFloat(score);
+            const maxNum = parseFloat(max);
+            if (isNaN(scoreNum) || isNaN(maxNum) || maxNum <= 0) {
+                alert('Invalid numbers.');
+                return;
+            }
+            const percentage = Math.min((scoreNum / maxNum) * 100, 100);
+            const subject = subjects.find(s => s.id === selectedSubjectId);
+            if (!subject) return;
+            subject.benchmarks.push({
+                id: Date.now(),
+                name: name,
+                score: scoreNum,
+                max: maxNum,
+                percentage: percentage.toFixed(1),
+                quarter: quarter,
+                date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+            });
+            calculateBenchmarkAverage(subject);
+            saveData();
+            renderSubjectDetail();
+            renderSubjects();
+            renderSubjectsFull();
+            document.getElementById('benchmarkName').value = '';
+            document.getElementById('benchmarkScore').value = '';
+            document.getElementById('benchmarkMax').value = '100';
+            document.getElementById('benchmarkName').focus();
+            alert('Benchmark added successfully!');
+        }
+
+        function deleteBenchmark(benchmarkId) {
+            if (!confirm('Delete this benchmark?')) return;
+            const subject = subjects.find(s => s.id === selectedSubjectId);
+            if (!subject) return;
+            subject.benchmarks = subject.benchmarks.filter(b => b.id !== benchmarkId);
+            calculateBenchmarkAverage(subject);
+            saveData();
+            renderSubjectDetail();
+            renderSubjects();
+            renderSubjectsFull();
+        }
+
+        // ----- Comp Exam Functions -----
+        function setCompExam() {
+            if (!selectedSubjectId) {
+                alert('Please select a subject first.');
+                return;
+            }
+            const score = document.getElementById('compExamScore')?.value;
+            const max = document.getElementById('compExamMax')?.value;
+            if (!score || !max) {
+                alert('Please fill in both fields.');
+                return;
+            }
+            const scoreNum = parseFloat(score);
+            const maxNum = parseFloat(max);
+            if (isNaN(scoreNum) || isNaN(maxNum) || maxNum <= 0) {
+                alert('Invalid numbers.');
+                return;
+            }
+            const percentage = Math.min((scoreNum / maxNum) * 100, 100);
+            const subject = subjects.find(s => s.id === selectedSubjectId);
+            if (!subject) return;
+            subject.compExam.score = scoreNum;
+            subject.compExam.max = maxNum;
+            subject.compExam.percentage = percentage.toFixed(1);
+            calculateSubjectAverages(subject);
+            saveData();
+            renderSubjectDetail();
+            renderSubjects();
+            renderSubjectsFull();
+            document.getElementById('compExamScore').value = '';
+            document.getElementById('compExamMax').value = '100';
+            alert('Comp Exam set successfully!');
+        }
+
+        function clearCompExam() {
+            if (!selectedSubjectId) return;
+            if (!confirm('Clear Comp Exam score?')) return;
+            const subject = subjects.find(s => s.id === selectedSubjectId);
+            if (!subject) return;
+            subject.compExam.score = null;
+            subject.compExam.max = null;
+            subject.compExam.percentage = null;
+            calculateSubjectAverages(subject);
+            saveData();
+            renderSubjectDetail();
+            renderSubjects();
+            renderSubjectsFull();
+            alert('Comp Exam cleared.');
+        }
+
+        // ----- Subject Management -----
+        function addSubject() {
+            const input = document.getElementById('subjectInput');
+            const name = input.value.trim();
+            if (!name) { alert('Please enter a subject name'); return; }
+            const newSubject = {
+                id: Date.now(),
+                name: name,
+                quarters: { q1: { minor: [], major: [], manualAverage: null }, q2: { minor: [], major: [],
+                        manualAverage: null }, q3: { minor: [], major: [], manualAverage: null }, q4: { minor: [],
+                            major: [], manualAverage: null } },
+                averages: { q1: 0, q2: 0, q3: 0, q4: 0, semester1: 0, semester2: 0, total: 0 },
+                grades: { q1: 'N/A', q2: 'N/A', q3: 'N/A', q4: 'N/A', semester1: 'N/A', semester2: 'N/A',
+                    total: 'N/A' },
+                benchmarks: [],
+                benchmarkAvg: 0,
+                compExam: { score: null, max: null, percentage: null }
+            };
+            subjects.push(newSubject);
+            saveData();
+            input.value = '';
+            input.focus();
+            if (window.innerWidth <= 767) { navigateTo('subjects'); }
+        }
+
+        function selectSubject(id) {
+            selectedSubjectId = id;
+            selectedPeriod = 'Q1';
+            editingAssignment = null;
+            renderSubjects();
+            renderSubjectDetail();
+            renderSubjectsFull();
+            if (window.innerWidth <= 767) { navigateTo('subjects'); }
+        }
+
+        function deleteSubject(id) {
+            if (!confirm('Delete this subject?')) return;
+            subjects = subjects.filter(s => s.id !== id);
+            if (selectedSubjectId === id) { selectedSubjectId = null;
+                editingAssignment = null; }
+            saveData();
+        }
+
+        function selectPeriod(period) {
+            selectedPeriod = period;
+            editingAssignment = null;
+            renderSubjectDetail();
+        }
+
+        function renderSubjects() {
+            const container = document.getElementById('subjectsList');
+            if (subjects.length === 0) {
+                container.innerHTML = `<div class="empty-state"><i class="fas fa-book"></i><p>No subjects yet</p></div>`;
+                return;
+            }
+            let html = '';
+            subjects.forEach(subject => {
+                const isActive = subject.id === selectedSubjectId;
+                const gradeClass = getGradeClass(subject.grades.total);
+                const compStatus = subject.compExam.percentage !== null ? '📝' : '';
+                html += `
+                            <div class="subject-card ${isActive ? 'active' : ''}" onclick="selectSubject(${subject.id})">
+                                <div class="subject-name">
+                                    <span>${subject.name}</span>
+                                    <span><span class="grade-badge ${gradeClass}">${subject.grades.total}</span><span style="margin-left:8px;font-weight:600;color:#4f46e5;">${subject.averages.total.toFixed(1)}%</span> ${compStatus}</span>
+                                </div>
+                                <div style="display:flex; justify-content:space-between; font-size:0.85rem; color:#64748b; margin-top:4px;">
+                                    <span>📚 ${subject.quarters ? subject.quarters.q1.minor.length + subject.quarters.q1.major.length + subject.quarters.q2.minor.length + subject.quarters.q2.major.length + subject.quarters.q3.minor.length + subject.quarters.q3.major.length + subject.quarters.q4.minor.length + subject.quarters.q4.major.length : 0} assignments</span>
+                                    <span>🔬 ${subject.benchmarks ? subject.benchmarks.length : 0} benchmarks</span>
+                                    <button class="btn-red btn-xs" onclick="deleteSubject(${subject.id}); event.stopPropagation();"><i class="fas fa-trash"></i></button>
+                                </div>
+                            </div>
+                        `;
+            });
+            container.innerHTML = html;
+
+            if (tutorialActive && tutorialStep === 2) {
+                setTimeout(() => showTutorialStep(), 300);
+            }
+        }
+
+        function renderSubjectsFull() {
+            const container = document.getElementById('subjectsListFull');
+            if (!container) return;
+            if (subjects.length === 0) {
+                container.innerHTML =
+                    `<div class="empty-state"><i class="fas fa-book"></i><p>No subjects yet. Go to Dashboard to add one.</p></div>`;
+                return;
+            }
+            let html = '';
+            subjects.forEach(subject => {
+                const gradeClass = getGradeClass(subject.grades.total);
+                const isActive = subject.id === selectedSubjectId;
+                const compStatus = subject.compExam.percentage !== null ? '📝 Comp: ' + subject.compExam.percentage +
+                    '%' : '';
+                html += `
+                            <div class="subject-card ${isActive ? 'active' : ''}" onclick="selectSubject(${subject.id})" style="margin-bottom:12px;">
+                                <div class="subject-name">
+                                    <span>${subject.name}</span>
+                                    <span><span class="grade-badge ${gradeClass}">${subject.grades.total}</span><span style="margin-left:8px;font-weight:600;color:#4f46e5;">${subject.averages.total.toFixed(1)}%</span></span>
+                                </div>
+                                <div style="display:flex; justify-content:space-between; font-size:0.85rem; color:#64748b; margin-top:4px;">
+                                    <span>📚 ${subject.quarters ? subject.quarters.q1.minor.length + subject.quarters.q1.major.length + subject.quarters.q2.minor.length + subject.quarters.q2.major.length + subject.quarters.q3.minor.length + subject.quarters.q3.major.length + subject.quarters.q4.minor.length + subject.quarters.q4.major.length : 0} assignments</span>
+                                    <span>🔬 ${subject.benchmarks ? subject.benchmarks.length : 0} benchmarks</span>
+                                    <span>${compStatus}</span>
+                                    <button class="btn-red btn-xs" onclick="deleteSubject(${subject.id}); event.stopPropagation();"><i class="fas fa-trash"></i> Delete</button>
+                                </div>
+                                <div style="margin-top:8px; font-size:0.8rem; color:#4f46e5;">Q1: ${subject.averages.q1.toFixed(1)}% | Q2: ${subject.averages.q2.toFixed(1)}% | Q3: ${subject.averages.q3.toFixed(1)}% | Q4: ${subject.averages.q4.toFixed(1)}% | 🔬 BM: ${subject.benchmarkAvg}% | 📝 CE: ${subject.compExam.percentage !== null ? subject.compExam.percentage + '%' : 'N/A'}</div>
+                            </div>
+                        `;
+            });
+            container.innerHTML = html;
+        }
+
+        // ----- Assignment Management -----
+        function addAssignment() {
+            if (!selectedSubjectId) { alert('Please select a subject first'); return; }
+            const name = document.getElementById('assignmentName')?.value.trim();
+            const typeRadio = document.querySelector('input[name="assignmentType"]:checked');
+            const type = typeRadio ? typeRadio.value : null;
+            const score = document.getElementById('scoreObtained')?.value;
+            const max = document.getElementById('scoreMax')?.value;
+            if (!name || !type || !score || !max) { alert('Please fill all fields'); return; }
+            const scoreNum = parseFloat(score);
+            const maxNum = parseFloat(max);
+            if (isNaN(scoreNum) || isNaN(maxNum) || maxNum <= 0) { alert('Invalid numbers'); return; }
+            const percentage = Math.min((scoreNum / maxNum) * 100, 100);
+            const quarterKey = selectedPeriod.toLowerCase();
+            const subject = subjects.find(s => s.id === selectedSubjectId);
+            if (!subject || !subject.quarters[quarterKey]) return;
+            const assignment = { id: Date.now(), name, score: scoreNum, max: maxNum, percentage: percentage.toFixed(
+                    1), date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' }), type };
+            if (type === 'minor') subject.quarters[quarterKey].minor.push(assignment);
+            else subject.quarters[quarterKey].major.push(assignment);
+            subject.quarters[quarterKey].manualAverage = null;
+            calculateSubjectAverages(subject);
+            saveData();
+            renderSubjectDetail();
+            renderSubjects();
+            renderSubjectsFull();
+            document.getElementById('assignmentName').value = '';
+            document.getElementById('scoreObtained').value = '';
+            document.getElementById('scoreMax').value = '100';
+            document.getElementById('assignmentName').focus();
+            alert(`Assignment "${name}" added successfully!`);
+        }
+
+        function deleteAssignment(quarter, type, assignmentId) {
+            if (!confirm('Delete this assignment?')) return;
+            const subject = subjects.find(s => s.id === selectedSubjectId);
+            if (!subject) return;
+            if (type === 'minor') { subject.quarters[quarter].minor = subject.quarters[quarter].minor.filter(a => a
+                    .id !== assignmentId); } else { subject.quarters[quarter].major = subject.quarters[quarter]
+                    .major.filter(a => a.id !== assignmentId); }
+            if (editingAssignment && editingAssignment.assignmentId === assignmentId) editingAssignment = null;
+            calculateSubjectAverages(subject);
+            saveData();
+            renderSubjectDetail();
+            renderSubjects();
+            renderSubjectsFull();
+        }
+
+        // ----- Edit Assignment Functions -----
+        function editAssignment(quarter, type, assignmentId) {
+            const subject = subjects.find(s => s.id === selectedSubjectId);
+            if (!subject) return;
+            let assignment;
+            if (type === 'minor') { assignment = subject.quarters[quarter].minor.find(a => a.id === assignmentId); } else { assignment =
+                    subject.quarters[quarter].major.find(a => a.id === assignmentId); }
+            if (!assignment) return;
+            editingAssignment = { quarter, type, assignmentId };
+            renderSubjectDetail();
+            setTimeout(() => {
+                const editForm = document.querySelector('.edit-assignment-form');
+                if (editForm) {
+                    editForm.classList.add('active');
+                    editForm.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    document.getElementById('editAssignmentName').value = assignment.name;
+                    document.getElementById('editScoreObtained').value = assignment.score;
+                    document.getElementById('editScoreMax').value = assignment.max;
+                    const minorBtn = document.querySelector('.edit-type-btn:nth-child(1)');
+                    const majorBtn = document.querySelector('.edit-type-btn:nth-child(2)');
+                    if (type === 'minor') { minorBtn.classList.add('active');
+                        majorBtn.classList.remove('active'); } else { majorBtn.classList.add('active');
+                        minorBtn.classList.remove('active'); }
+                    document.getElementById('editAssignmentName').focus();
+                }
+            }, 100);
+        }
+
+        function updateAssignment() {
+            if (!editingAssignment || !selectedSubjectId) { alert('No assignment selected'); return; }
+            const name = document.getElementById('editAssignmentName')?.value.trim();
+            const typeRadio = document.querySelector('input[name="editAssignmentType"]:checked');
+            const type = typeRadio ? typeRadio.value : null;
+            const score = document.getElementById('editScoreObtained')?.value;
+            const max = document.getElementById('editScoreMax')?.value;
+            if (!name || !type || !score || !max) { alert('Please fill all fields'); return; }
+            const scoreNum = parseFloat(score);
+            const maxNum = parseFloat(max);
+            if (isNaN(scoreNum) || isNaN(maxNum) || maxNum <= 0) { alert('Invalid numbers'); return; }
+            const percentage = Math.min((scoreNum / maxNum) * 100, 100);
+            const subject = subjects.find(s => s.id === selectedSubjectId);
+            if (!subject) return;
+            if (editingAssignment.type === 'minor') {
+                subject.quarters[editingAssignment.quarter].minor = subject.quarters[editingAssignment.quarter]
+                    .minor.filter(a => a.id !== editingAssignment.assignmentId);
+            } else {
+                subject.quarters[editingAssignment.quarter].major = subject.quarters[editingAssignment.quarter]
+                    .major.filter(a => a.id !== editingAssignment.assignmentId);
+            }
+            const updated = { id: editingAssignment.assignmentId, name, score: scoreNum, max: maxNum, percentage: percentage
+                    .toFixed(1), date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+                type };
+            if (type === 'minor') subject.quarters[editingAssignment.quarter].minor.push(updated);
+            else subject.quarters[editingAssignment.quarter].major.push(updated);
+            calculateSubjectAverages(subject);
+            saveData();
+            editingAssignment = null;
+            renderSubjectDetail();
+            renderSubjects();
+            renderSubjectsFull();
+            alert('Assignment updated!');
+        }
+
+        function cancelEdit() { editingAssignment = null;
+            renderSubjectDetail(); }
+
+        function setEditAssignmentType(type, event) {
+            if (event) event.stopPropagation();
+            const buttons = document.querySelectorAll('.edit-type-btn');
+            buttons.forEach(btn => btn.classList.remove('active'));
+            if (type === 'minor') buttons[0].classList.add('active');
+            else buttons[1].classList.add('active');
+            document.getElementById(`editAssignmentType${type.charAt(0).toUpperCase() + type.slice(1)}`).checked = true;
+        }
+
+        function setAssignmentType(type, event) {
+            if (event) event.stopPropagation();
+            const buttons = document.querySelectorAll('.type-btn');
+            buttons.forEach(btn => btn.classList.remove('active'));
+            if (type === 'minor') buttons[0].classList.add('active');
+            else buttons[1].classList.add('active');
+            document.getElementById(`assignmentType${type.charAt(0).toUpperCase() + type.slice(1)}`).checked = true;
+        }
+
+        // ----- Manual Average -----
+        function setManualAverage(quarter, average) {
+            if (!selectedSubjectId) return;
+            const avg = parseFloat(average);
+            if (isNaN(avg) || avg < 0 || avg > 100) { alert('Enter a number between 0 and 100'); return; }
+            const subject = subjects.find(s => s.id === selectedSubjectId);
+            if (!subject) return;
+            subject.quarters[quarter].manualAverage = avg;
+            calculateSubjectAverages(subject);
+            saveData();
+            renderSubjectDetail();
+            renderSubjects();
+            renderSubjectsFull();
+            alert(`Manual average for ${quarter.toUpperCase()} set to ${avg.toFixed(1)}%`);
+        }
+
+        function clearManualAverage(quarter) {
+            if (!selectedSubjectId) return;
+            const subject = subjects.find(s => s.id === selectedSubjectId);
+            if (!subject) return;
+            subject.quarters[quarter].manualAverage = null;
+            calculateSubjectAverages(subject);
+            saveData();
+            renderSubjectDetail();
+            renderSubjects();
+            renderSubjectsFull();
+            alert(`Manual average for ${quarter.toUpperCase()} cleared`);
+        }
+
+        // ----- Calculations (with new weighting) -----
+        function calculateSubjectAverages(subject) {
+            // Quarter averages
+            ['q1', 'q2', 'q3', 'q4'].forEach(q => {
+                const qd = subject.quarters[q];
+                if (qd.manualAverage !== null) {
+                    subject.averages[q] = qd.manualAverage;
+                } else {
+                    const minorAvg = calculateAverage(qd.minor);
+                    const majorAvg = calculateAverage(qd.major);
+                    if (minorAvg > 0 && majorAvg > 0) subject.averages[q] = minorAvg * 0.4 + majorAvg * 0.6;
+                    else if (minorAvg > 0) subject.averages[q] = minorAvg;
+                    else if (majorAvg > 0) subject.averages[q] = majorAvg;
+                    else subject.averages[q] = 0;
+                }
+                subject.grades[q] = getGrade(subject.averages[q]);
+            });
+
+            // Semester 1 = avg of Q1 + Q2
+            subject.averages.semester1 = (subject.averages.q1 + subject.averages.q2) / 2 || 0;
+            subject.grades.semester1 = getGrade(subject.averages.semester1);
+
+            // Semester 2 = avg of Q3 + Q4
+            subject.averages.semester2 = (subject.averages.q3 + subject.averages.q4) / 2 || 0;
+            subject.grades.semester2 = getGrade(subject.averages.semester2);
+
+            // TOTAL = (Q1×17.5%) + (Q2×17.5%) + (Q3×17.5%) + (Q4×17.5%) + (CompExam×30%)
+            const compPct = subject.compExam.percentage !== null ? parseFloat(subject.compExam.percentage) : 0;
+            const totalWeighted =
+                (subject.averages.q1 * 0.175) +
+                (subject.averages.q2 * 0.175) +
+                (subject.averages.q3 * 0.175) +
+                (subject.averages.q4 * 0.175) +
+                (compPct * 0.30);
+
+            subject.averages.total = parseFloat(totalWeighted.toFixed(1));
+            subject.grades.total = getGrade(subject.averages.total);
+        }
+
+        function calculateAverage(assignments) {
+            if (!assignments || assignments.length === 0) return 0;
+            const total = assignments.reduce((sum, a) => sum + parseFloat(a.percentage), 0);
+            return total / assignments.length;
+        }
+
+        function getGrade(percentage) {
+            const p = parseFloat(percentage);
+            if (p === 0) return 'N/A';
+            if (p >= 90) return 'A';
+            if (p >= 80) return 'B';
+            if (p >= 70) return 'C';
+            if (p >= 60) return 'D';
+            return 'F';
+        }
+
+        function getGradeClass(grade) { return 'grade-' + grade; }
+
+        function calculateOverallAverages() {
+            const withScores = subjects.filter(s => s.averages.total > 0);
+            if (withScores.length === 0) return { total: 0, semester1: 0, semester2: 0, predicted: 0 };
+            const total = withScores.reduce((sum, s) => sum + s.averages.total, 0) / withScores.length;
+            const sem1 = withScores.reduce((sum, s) => sum + s.averages.semester1, 0) / withScores.length;
+            const sem2 = withScores.reduce((sum, s) => sum + s.averages.semester2, 0) / withScores.length;
+            return { total: total.toFixed(1), semester1: sem1.toFixed(1), semester2: sem2.toFixed(1), predicted: total
+                    .toFixed(1) };
+        }
+
+        // ----- UI Updates -----
+        function updateDashboard() {
+            const overall = calculateOverallAverages();
+            document.getElementById('totalAverage').textContent = overall.total + '%';
+            document.getElementById('semester1Avg').textContent = overall.semester1 + '%';
+            document.getElementById('semester2Avg').textContent = overall.semester2 + '%';
+            document.getElementById('predictedAvg').textContent = overall.predicted + '%';
+            document.getElementById('totalSubjects').textContent = subjects.length;
+        }
+
+        // ================================================================
+        //  RENDER SUBJECT DETAIL (with all tabs: Q1-Q4, Benchmark, Comp Exam, S1, S2, Total)
+        // ================================================================
+        function renderSubjectDetail() {
+            const container = document.getElementById('subjectDetail');
+            if (!selectedSubjectId) {
+                container.innerHTML =
+                    `<div class="empty-state"><i class="fas fa-hand-pointer"></i><h2>Select a Subject</h2><p>Choose a subject to add, edit, or manage assignments</p></div>`;
+                return;
+            }
+            const subject = subjects.find(s => s.id === selectedSubjectId);
+            if (!subject) return;
+
+            const quarterKey = selectedPeriod.toLowerCase();
+            const isQuarter = ['q1', 'q2', 'q3', 'q4'].includes(quarterKey);
+            const isBenchmark = (selectedPeriod === 'Benchmark');
+            const isCompExam = (selectedPeriod === 'Comp Exam');
+
+            // Period tabs: Q1, Q2, Q3, Q4, Benchmark, Comp Exam, S1, S2, Total
+            const periods = ['Q1', 'Q2', 'Q3', 'Q4', 'Benchmark', 'Comp Exam', 'S1', 'S2', 'Total'];
+            const periodTabs = periods.map(p => {
+                const label = (p === 'Benchmark') ? '🔬 Benchmark' : (p === 'Comp Exam') ? '📝 Comp Exam' : p;
+                const activeClass = (selectedPeriod === p) ? 'active' : '';
+                return `<div class="period-tab ${activeClass}" onclick="selectPeriod('${p}')">${label}</div>`;
+            }).join('');
+
+            // --- COMP EXAM TAB ---
+            if (isCompExam) {
+                const ce = subject.compExam;
+                const display = ce.percentage !== null ? `${ce.percentage}% (${ce.score}/${ce.max})` : 'Not set';
+                const grade = getGrade(ce.percentage);
+                const gradeClass = getGradeClass(grade);
+
+                container.innerHTML = `
+                            <div class="summary-grid">
+                                <div class="summary-card">
+                                    <div class="value">${ce.percentage !== null ? ce.percentage + '%' : 'N/A'}</div>
+                                    <div class="label">Comp Exam</div>
+                                    ${ce.percentage !== null ? `<span class="grade-badge ${gradeClass}">${grade}</span>` : ''}
+                                </div>
+                                <div class="summary-card">
+                                    <div class="value">${ce.percentage !== null ? ce.score + '/' + ce.max : 'N/A'}</div>
+                                    <div class="label">Score / Max</div>
+                                </div>
+                            </div>
+                            <div class="period-tabs">${periodTabs}</div>
+                            <div class="compexam-panel">
+                                <h3>Set Comprehensive Exam Score</h3>
+                                <p style="color:#64748b; margin-bottom:16px;">The Comp Exam counts for <strong>30%</strong> of your total grade.</p>
+                                <div class="form-grid">
+                                    <div class="field">
+                                        <label>Score</label>
+                                        <input type="number" id="compExamScore" placeholder="Score" step="0.1" min="0" />
+                                    </div>
+                                    <div class="field">
+                                        <label>Maximum</label>
+                                        <input type="number" id="compExamMax" placeholder="100" value="100" step="0.1" min="1" />
+                                    </div>
+                                    <div class="field" style="display:flex; gap:10px; align-items:flex-end;">
+                                        <button class="add-btn" onclick="setCompExam()" style="flex:1;"><i class="fas fa-save"></i> Set Comp Exam</button>
+                                        ${ce.percentage !== null ? `<button class="btn-red btn-sm" onclick="clearCompExam()" style="padding:12px 18px; font-size:0.9rem;"><i class="fas fa-times"></i> Clear</button>` : ''}
+                                    </div>
+                                </div>
+                                ${ce.percentage !== null ? `
+                                    <div class="compexam-display">
+                                        <span>Current Comp Exam:</span>
+                                        <span class="score">${ce.percentage}% (${ce.score}/${ce.max}) - ${grade}</span>
+                                    </div>
+                                ` : ''}
+                            </div>
+                            <div style="text-align:center;padding:20px;color:#64748b;background:#f8fafc;border-radius:12px;">
+                                <p><strong>Weight:</strong> Q1 17.5% | Q2 17.5% | Q3 17.5% | Q4 17.5% | Comp Exam 30%</p>
+                            </div>
+                        `;
+                setupFormEnterKey('compExamScore', 'compExamMax', null, setCompExam);
+                return;
+            }
+
+            // --- BENCHMARK TAB ---
+            if (isBenchmark) {
+                const benchmarks = subject.benchmarks || [];
+                let benchmarkHtml = '';
+                if (benchmarks.length === 0) {
+                    benchmarkHtml = `<p style="color:#94a3b8; padding:20px 0;">No benchmarks recorded yet.</p>`;
+                } else {
+                    const sorted = [...benchmarks].sort((a, b) => {
+                        const qOrder = { q1: 1, q2: 2, q3: 3, q4: 4 };
+                        if (a.quarter !== b.quarter) return qOrder[a.quarter] - qOrder[b.quarter];
+                        return new Date(a.date) - new Date(b.date);
+                    });
+                    benchmarkHtml = `
+                                <div class="table-wrap">
+                                    <table class="scores-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Quarter</th>
+                                                <th>Name</th>
+                                                <th>Score</th>
+                                                <th>%</th>
+                                                <th>Grade</th>
+                                                <th>Date</th>
+                                                <th>Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            ${sorted.map(b => {
+                                                const qLabel = b.quarter.toUpperCase();
+                                                const grade = getGrade(b.percentage);
+                                                const gradeClass = getGradeClass(grade);
+                                                return `
+                                                    <tr>
+                                                        <td><strong>${qLabel}</strong></td>
+                                                        <td>${b.name}</td>
+                                                        <td>${b.score}/${b.max}</td>
+                                                        <td>${b.percentage}%</td>
+                                                        <td><span class="grade-badge ${gradeClass}">${grade}</span></td>
+                                                        <td>${b.date}</td>
+                                                        <td>
+                                                            <button class="btn-red btn-xs" onclick="deleteBenchmark(${b.id})"><i class="fas fa-trash"></i></button>
+                                                        </td>
+                                                    </tr>
+                                                `;
+                                            }).join('')}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            `;
+                }
+
+                const avgDisplay = subject.benchmarkAvg ? subject.benchmarkAvg + '%' : 'N/A';
+                const grade = getGrade(subject.benchmarkAvg);
+                const gradeClass = getGradeClass(grade);
+
+                container.innerHTML = `
+                            <div class="summary-grid">
+                                <div class="summary-card">
+                                    <div class="value">${avgDisplay}</div>
+                                    <div class="label">Benchmark Average</div>
+                                    <span class="grade-badge ${gradeClass}">${grade}</span>
+                                </div>
+                                <div class="summary-card">
+                                    <div class="value">${benchmarks.length}</div>
+                                    <div class="label">Total Benchmarks</div>
+                                </div>
+                            </div>
+                            <div class="period-tabs">${periodTabs}</div>
+                            <div class="benchmark-panel">
+                                <h3>Add Benchmark Score</h3>
+                                <div class="form-grid">
+                                    <div class="field">
+                                        <label>Name</label>
+                                        <input type="text" id="benchmarkName" placeholder="e.g., Midterm, Final" />
+                                    </div>
+                                    <div class="field">
+                                        <label>Score</label>
+                                        <input type="number" id="benchmarkScore" placeholder="Score" step="0.1" min="0" />
+                                    </div>
+                                    <div class="field">
+                                        <label>Max</label>
+                                        <input type="number" id="benchmarkMax" placeholder="100" value="100" step="0.1" min="1" />
+                                    </div>
+                                    <div class="field">
+                                        <label>Quarter</label>
+                                        <select id="benchmarkQuarter">
+                                            <option value="q1">Q1</option>
+                                            <option value="q2">Q2</option>
+                                            <option value="q3">Q3</option>
+                                            <option value="q4">Q4</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <button class="add-btn" onclick="addBenchmark()"><i class="fas fa-plus"></i> Add Benchmark</button>
+                            </div>
+                            <h3>Benchmark History</h3>
+                            ${benchmarkHtml}
+                        `;
+                setupFormEnterKey('benchmarkName', 'benchmarkScore', 'benchmarkMax', addBenchmark);
+                return;
+            }
+
+            // --- QUARTER TAB (Q1, Q2, Q3, Q4) ---
+            if (isQuarter) {
+                const allAssignments = [
+                    ...subject.quarters[quarterKey].minor.map(a => ({ ...a, type: 'minor' })),
+                    ...subject.quarters[quarterKey].major.map(a => ({ ...a, type: 'major' }))
+                ].sort((a, b) => b.id - a.id);
+                const totalAssignments = allAssignments.length;
+                let totalPercentSum = 0;
+                allAssignments.forEach(a => totalPercentSum += parseFloat(a.percentage));
+                const avgDisplay = totalAssignments > 0 ? (totalPercentSum / totalAssignments).toFixed(1) : 'N/A';
+
+                let assignmentsTable = '';
+                if (allAssignments.length === 0) {
+                    assignmentsTable =
+                        `<tr><td colspan="7" style="text-align:center;padding:40px;color:#94a3b8;">${subject.quarters[quarterKey].manualAverage !== null ? 'Manual average set. Add assignments to switch to assignment-based calculation.' : 'No assignments yet.'}</td></tr>`;
+                } else {
+                    assignmentsTable = allAssignments.map(a => {
+                        const typeClass = a.type === 'minor' ? 'type-minor' : 'type-major';
+                        return `
+                                    <tr>
+                                        <td>${a.name}</td>
+                                        <td>${a.score}/${a.max}</td>
+                                        <td>${a.percentage}%</td>
+                                        <td><span class="type-badge ${typeClass}">${a.type === 'minor' ? 'Minor' : 'Major'}</span></td>
+                                        <td>${getGrade(a.percentage)}</td>
+                                        <td>${a.date}</td>
+                                        <td>
+                                            <div class="assignment-actions">
+                                                <button class="btn-blue btn-xs" onclick="editAssignment('${quarterKey}','${a.type}',${a.id})"><i class="fas fa-edit"></i></button>
+                                                <button class="btn-red btn-xs" onclick="deleteAssignment('${quarterKey}','${a.type}',${a.id})"><i class="fas fa-trash"></i></button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                `;
+                    }).join('');
+                }
+
+                container.innerHTML = `
+                            <div class="summary-grid">
+                                <div class="summary-card"><div class="value">${subject.averages[quarterKey].toFixed(1)}%</div><div class="label">${selectedPeriod} Average</div><span class="grade-badge ${getGradeClass(subject.grades[quarterKey])}">${subject.grades[quarterKey]}</span></div>
+                                <div class="summary-card"><div class="value">${totalAssignments}</div><div class="label">Total Assignments</div></div>
+                                <div class="summary-card"><div class="value">${subject.quarters[quarterKey].manualAverage !== null ? 'Manual' : 'Auto'}</div><div class="label">Calculation</div></div>
+                                <div class="summary-card"><div class="value">17.5%</div><div class="label">Weight</div></div>
+                            </div>
+                            <div class="period-tabs">${periodTabs}</div>
+
+                            ${subject.quarters[quarterKey].manualAverage !== null ? `
+                                <div class="average-setter" style="margin-bottom:20px;">
+                                    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+                                        <span style="font-weight:600; color:#475569;">Manual average is active for ${selectedPeriod}: <strong>${subject.quarters[quarterKey].manualAverage}%</strong></span>
+                                        <button class="btn-red btn-sm" onclick="clearManualAverage('${quarterKey}')"><i class="fas fa-times"></i> Clear</button>
+                                    </div>
+                                </div>
+                            ` : `
+                                <div class="average-setter">
+                                    <h3 style="margin-top:0;">Set ${selectedPeriod} Average Manually</h3>
+                                    <p style="color:#64748b; margin-bottom:12px;">Use this if you don't have individual assignment scores.</p>
+                                    <div class="avg-input-row">
+                                        <span class="average-label">Average:</span>
+                                        <input type="number" id="manualAverageInput" placeholder="0-100" min="0" max="100" step="0.1">
+                                        <span style="color:#64748b;">%</span>
+                                        <button class="btn btn-blue btn-sm" onclick="setManualAverage('${quarterKey}', document.getElementById('manualAverageInput').value)"><i class="fas fa-check"></i> Set</button>
+                                    </div>
+                                </div>
+                            `}
+
+                            <div class="assignment-panel">
+                                <h3>Add Assignment to ${selectedPeriod}</h3>
+                                <div class="form-grid">
+                                    <div class="field">
+                                        <label>Name</label>
+                                        <input type="text" id="assignmentName" placeholder="Quiz, Test..." />
+                                    </div>
+                                    <div class="field">
+                                        <label>Score</label>
+                                        <input type="number" id="scoreObtained" placeholder="Score" step="0.1" min="0" />
+                                    </div>
+                                    <div class="field">
+                                        <label>Max</label>
+                                        <input type="number" id="scoreMax" placeholder="100" value="100" step="0.1" min="1" />
+                                    </div>
+                                    <div class="field">
+                                        <label>Type</label>
+                                        <div class="type-buttons">
+                                            <div class="type-btn active" onclick="setAssignmentType('minor', event)">Minor</div>
+                                            <div class="type-btn" onclick="setAssignmentType('major', event)">Major</div>
+                                        </div>
+                                        <input type="radio" name="assignmentType" value="minor" id="assignmentTypeMinor" checked class="assignment-type-radio">
+                                        <input type="radio" name="assignmentType" value="major" id="assignmentTypeMajor" class="assignment-type-radio">
+                                    </div>
+                                </div>
+                                <button class="add-btn" onclick="addAssignment()"><i class="fas fa-plus"></i> Add Assignment</button>
+                            </div>
+
+                            <div class="assignment-summary">
+                                <span class="count">📊 <strong>${totalAssignments}</strong> assignment${totalAssignments !== 1 ? 's' : ''}</span>
+                                <span class="avg-display">📈 Average: <strong>${avgDisplay}%</strong></span>
+                                <span class="avg-display">⚖️ Weight: <strong>17.5%</strong></span>
+                            </div>
+                            <h3>${selectedPeriod} Assignments</h3>
+                            <div class="table-wrap">
+                                <table class="scores-table">
+                                    <thead><tr><th>Name</th><th>Score</th><th>%</th><th>Type</th><th>Grade</th><th>Date</th><th>Actions</th></tr></thead>
+                                    <tbody>${assignmentsTable}</tbody>
+                                </table>
+                            </div>
+                        `;
+
+                setupFormEnterKey('assignmentName', 'scoreObtained', 'scoreMax', addAssignment);
+                if (editingAssignment) {
+                    setupFormEnterKey('editAssignmentName', 'editScoreObtained', 'editScoreMax', updateAssignment);
+                }
+                const avgInput = document.getElementById('manualAverageInput');
+                if (avgInput) {
+                    avgInput.addEventListener('keypress', function(e) {
+                        if (e.key === 'Enter') setManualAverage(quarterKey, avgInput.value);
+                    });
+                }
+                return;
+            }
+
+            // --- SEMESTER / TOTAL VIEWS ---
+            if (['S1', 'S2', 'Total'].includes(selectedPeriod)) {
+                let title = selectedPeriod;
+                let value = subject.averages[selectedPeriod === 'S1' ? 'semester1' : selectedPeriod === 'S2' ? 'semester2' :
+                    'total'
+                ];
+                let grade = subject.grades[selectedPeriod === 'S1' ? 'semester1' : selectedPeriod === 'S2' ? 'semester2' :
+                    'total'
+                ];
+                let gradeClass = getGradeClass(grade);
+                let description = '';
+                let weightInfo = '';
+
+                if (selectedPeriod === 'S1') {
+                    description = 'Average of Q1 + Q2';
+                    weightInfo = 'Q1: 17.5% | Q2: 17.5% (Total: 35%)';
+                } else if (selectedPeriod === 'S2') {
+                    description = 'Average of Q3 + Q4';
+                    weightInfo = 'Q3: 17.5% | Q4: 17.5% (Total: 35%)';
+                } else {
+                    description = 'Weighted total: (Q1×17.5%) + (Q2×17.5%) + (Q3×17.5%) + (Q4×17.5%) + (CompExam×30%)';
+                    weightInfo = '100% total';
+                }
+
+                container.innerHTML = `
+                            <div class="summary-grid">
+                                <div class="summary-card">
+                                    <div class="value">${value.toFixed(1)}%</div>
+                                    <div class="label">${selectedPeriod}</div>
+                                    <span class="grade-badge ${gradeClass}">${grade}</span>
+                                </div>
+                                <div class="summary-card">
+                                    <div class="value">${description}</div>
+                                    <div class="label">Calculation</div>
+                                </div>
+                                <div class="summary-card">
+                                    <div class="value">${weightInfo}</div>
+                                    <div class="label">Weighting</div>
+                                </div>
+                            </div>
+                            <div class="period-tabs">${periodTabs}</div>
+                            <div style="text-align:center;padding:40px;color:#64748b;background:#f8fafc;border-radius:12px;">
+                                <i class="fas fa-info-circle" style="font-size:3rem;margin-bottom:16px;opacity:0.5;"></i>
+                                <h3>${selectedPeriod} Overview</h3>
+                                <p>${description}</p>
+                                <p style="margin-top:8px;"><strong>Grade:</strong> ${grade} (${value.toFixed(1)}%)</p>
+                            </div>
+                        `;
+                return;
+            }
+
+            // Fallback
+            container.innerHTML = `<div class="empty-state"><p>Select a valid period.</p></div>`;
+        }
+
+        // ================================================================
+        //  HELPERS
+        // ================================================================
+        function findAssignment(subject, quarter, type, id) {
+            if (type === 'minor') return subject.quarters[quarter].minor.find(a => a.id === id);
+            else return subject.quarters[quarter].major.find(a => a.id === id);
+        }
+
+        function setupFormEnterKey(nameId, scoreId, maxId, callback) {
+            const nameInput = document.getElementById(nameId);
+            if (nameInput) {
+                nameInput.focus();
+                const addOnEnter = function(e) { if (e.key === 'Enter') callback(); };
+                nameInput.addEventListener('keypress', addOnEnter);
+                if (scoreId) document.getElementById(scoreId)?.addEventListener('keypress', addOnEnter);
+                if (maxId) document.getElementById(maxId)?.addEventListener('keypress', addOnEnter);
+            }
+        }
+
+        // ================================================================
+        //  START
+        // ================================================================
+        document.getElementById('loginPassword').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') loginUser();
+        });
+        document.getElementById('loginUsername').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') loginUser();
+        });
+
+        checkLogin();
+    </script>
+</body>
+</html>
