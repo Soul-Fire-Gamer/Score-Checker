@@ -1,1 +1,1 @@
-# BASIS-Score-Checker
+# Score-Checker
