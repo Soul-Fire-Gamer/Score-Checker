@@ -1,0 +1,12 @@
+[
+  {
+    "username": "alice",
+    "passwordHash": "8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918",
+    "hint": "Alice's secret hint"
+  },
+  {
+    "username": "bob",
+    "passwordHash": "3d4f2bf07dc1be38b20cd6e46949a1071f9d0e3d4c1c0b0c7f1e2a3b4c5d6e7f",
+    "hint": "Bob's hint"
+  }
+]
