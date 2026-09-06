@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Academic Tracker</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <link rel="stylesheet" href="app.css" />
+    <!-- Page-specific styles will be loaded dynamically -->
+</head>
+<body>
+    <div id="app">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="left">
+                <button class="menu-btn" id="menuToggle"><i class="fas fa-bars"></i></button>
+                <div class="brand"><i class="fas fa-graduation-cap"></i> Tracker</div>
+                <span class="page-title" id="pageTitle">Dashboard</span>
+            </div>
+            <div class="right">
+                <span class="username" id="headerUsername"></span>
+                <button class="logout-btn" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Logout</button>
+            </div>
+        </header>
+
+        <!-- Sidebar -->
+        <nav class="app-sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <img id="sidebarProfilePic" src="" alt="Profile" />
+                <div class="user-info"><div class="name" id="sidebarUsername">User</div></div>
+            </div>
+            <button class="nav-item active" data-page="dashboard"><i class="fas fa-th-large"></i> Dashboard</button>
+            <button class="nav-item" data-page="subjects"><i class="fas fa-book"></i> Subjects</button>
+            <button class="nav-item" data-page="calendar"><i class="fas fa-calendar-alt"></i> Calendar</button>
+            <button class="nav-item" data-page="notes"><i class="fas fa-sticky-note"></i> Notes</button>
+            <button class="nav-item" data-page="profile"><i class="fas fa-user-circle"></i> Profile</button>
+            <div class="sidebar-footer">
+                <button class="nav-item" onclick="logout()" style="color:#ef4444;"><i class="fas fa-sign-out-alt"></i> Logout</button>
+            </div>
+        </nav>
+
+        <!-- Overlay for mobile -->
+        <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+        <!-- Main Content -->
+        <main id="mainContent">
+            <!-- Pages will be loaded here dynamically -->
+            <div id="pageContainer"></div>
+        </main>
+    </div>
+
+    <!-- Bottom Nav (mobile) -->
+    <div class="bottom-nav" id="bottomNav">
+        <button class="nav-icon active" data-page="dashboard"><i class="fas fa-th-large"></i> Home</button>
+        <button class="nav-icon" data-page="subjects"><i class="fas fa-book"></i> Subjects</button>
+        <button class="nav-icon" data-page="calendar"><i class="fas fa-calendar-alt"></i> Calendar</button>
+        <button class="nav-icon" data-page="notes"><i class="fas fa-sticky-note"></i> Notes</button>
+        <button class="nav-icon" data-page="profile"><i class="fas fa-user-circle"></i> Profile</button>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

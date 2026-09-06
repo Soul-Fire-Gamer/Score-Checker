@@ -1,0 +1,277 @@
+/* ----- Reset & Layout ----- */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+body {
+    background: #f1f5f9;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    padding: 20px;
+}
+#app {
+    max-width: 1400px;
+    width: 100%;
+    background: white;
+    border-radius: 24px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.08);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    min-height: 90vh;
+    position: relative;
+}
+
+/* ----- Header ----- */
+.app-header {
+    background: linear-gradient(135deg, #4f46e5, #7c3aed);
+    color: white;
+    padding: 12px 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    flex-shrink: 0;
+}
+.app-header .left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+.app-header .menu-btn {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 1.6rem;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 8px;
+    display: none;
+}
+.app-header .menu-btn:hover {
+    background: rgba(255,255,255,0.15);
+}
+.app-header .brand {
+    font-weight: 700;
+    font-size: 1.4rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.app-header .brand i { font-size: 1.6rem; }
+.app-header .page-title {
+    font-size: 1rem;
+    font-weight: 500;
+    opacity: 0.85;
+    background: rgba(255,255,255,0.12);
+    padding: 4px 14px;
+    border-radius: 20px;
+    margin-left: 8px;
+}
+.app-header .right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+.app-header .right .username {
+    font-weight: 500;
+    font-size: 0.95rem;
+}
+.app-header .logout-btn {
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.2);
+    color: white;
+    padding: 6px 16px;
+    border-radius: 30px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+.app-header .logout-btn:hover {
+    background: rgba(255,255,255,0.3);
+    transform: scale(1.05);
+}
+
+/* ----- Sidebar ----- */
+.app-sidebar {
+    position: fixed;
+    top: 0;
+    left: -280px;
+    width: 280px;
+    height: 100%;
+    background: white;
+    box-shadow: 4px 0 20px rgba(0,0,0,0.1);
+    transition: left 0.3s cubic-bezier(0.4,0,0.2,1);
+    z-index: 200;
+    padding: 24px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow-y: auto;
+}
+.app-sidebar.open { left: 0; }
+.sidebar-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.4);
+    z-index: 150;
+    display: none;
+    backdrop-filter: blur(2px);
+}
+.sidebar-overlay.active { display: block; }
+.app-sidebar .sidebar-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #e5e7eb;
+    margin-bottom: 16px;
+}
+.app-sidebar .sidebar-header img {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #4f46e5;
+}
+.app-sidebar .sidebar-header .user-info { flex: 1; }
+.app-sidebar .sidebar-header .user-info .name {
+    font-weight: 600;
+    color: #1e293b;
+    font-size: 1.05rem;
+}
+.app-sidebar .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 12px 16px;
+    border-radius: 12px;
+    color: #475569;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: none;
+    background: none;
+    width: 100%;
+    font-size: 1rem;
+}
+.app-sidebar .nav-item i {
+    font-size: 1.2rem;
+    width: 24px;
+    text-align: center;
+    color: #94a3b8;
+}
+.app-sidebar .nav-item:hover {
+    background: #f1f5f9;
+    color: #4f46e5;
+}
+.app-sidebar .nav-item:hover i { color: #4f46e5; }
+.app-sidebar .nav-item.active {
+    background: #eef2ff;
+    color: #4f46e5;
+}
+.app-sidebar .nav-item.active i { color: #4f46e5; }
+.app-sidebar .sidebar-footer {
+    margin-top: auto;
+    padding-top: 16px;
+    border-top: 1px solid #e5e7eb;
+}
+
+/* ----- Main Content ----- */
+#mainContent {
+    flex: 1;
+    padding: 24px 28px;
+    overflow-y: auto;
+    background: white;
+}
+#pageContainer {
+    animation: fadeIn 0.3s ease;
+}
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* ----- Bottom Nav (mobile) ----- */
+.bottom-nav {
+    display: none;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: white;
+    padding: 8px 12px;
+    box-shadow: 0 -4px 20px rgba(0,0,0,0.08);
+    z-index: 50;
+    border-top: 1px solid #e5e7eb;
+    justify-content: space-around;
+    align-items: center;
+}
+.bottom-nav .nav-icon {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    background: none;
+    border: none;
+    color: #94a3b8;
+    font-size: 0.7rem;
+    cursor: pointer;
+    padding: 6px 12px;
+    border-radius: 8px;
+    transition: all 0.2s;
+    flex: 1;
+}
+.bottom-nav .nav-icon i { font-size: 1.3rem; }
+.bottom-nav .nav-icon.active { color: #4f46e5; }
+.bottom-nav .nav-icon.active i { color: #4f46e5; }
+
+/* ----- Responsive ----- */
+@media (max-width: 767px) {
+    .app-header .menu-btn { display: block; }
+    .app-header .page-title { display: none; }
+    .app-header .brand { font-size: 1.2rem; }
+    .app-header .right .username { display: none; }
+    .app-sidebar { width: 260px; left: -260px; }
+    .bottom-nav { display: flex; }
+    #mainContent { padding-bottom: 80px; }
+}
+@media (min-width: 768px) {
+    .app-sidebar {
+        position: static;
+        width: 100%;
+        height: auto;
+        background: transparent;
+        box-shadow: none;
+        padding: 0;
+        flex-direction: row;
+        flex-wrap: wrap;
+        gap: 4px;
+        border-bottom: 1px solid #e5e7eb;
+        padding: 8px 16px;
+        background: #f8fafc;
+        border-radius: 0;
+    }
+    .app-sidebar.open { left: auto; }
+    .app-sidebar .sidebar-header { display: none; }
+    .app-sidebar .nav-item {
+        width: auto;
+        padding: 8px 16px;
+        border-radius: 20px;
+    }
+    .app-sidebar .sidebar-footer { display: none; }
+    .sidebar-overlay { display: none !important; }
+    #mainContent { padding: 28px 32px; }
+}
