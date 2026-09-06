@@ -1,0 +1,116 @@
+<!-- ============================================================
+     PROFILE PAGE
+     ============================================================ -->
+<div class="profile-page">
+    <div class="profile-container">
+        <h2><i class="fas fa-user-circle"></i> My Profile</h2>
+        
+        <!-- Profile Picture -->
+        <div class="profile-pic-section">
+            <div class="profile-pic-wrapper">
+                <img id="profilePagePic" src="" alt="Profile Picture" />
+                <div class="profile-pic-overlay" onclick="document.getElementById('profilePicInput').click()">
+                    <i class="fas fa-camera"></i>
+                    <span>Change Photo</span>
+                </div>
+            </div>
+            <input type="file" id="profilePicInput" accept="image/*" />
+            <div class="profile-pic-actions">
+                <button class="btn btn-small" onclick="uploadProfilePic()">
+                    <i class="fas fa-upload"></i> Upload
+                </button>
+                <button class="btn btn-small btn-red" onclick="removeProfilePic()">
+                    <i class="fas fa-trash"></i> Remove
+                </button>
+            </div>
+        </div>
+        
+        <!-- User Info -->
+        <div class="profile-info">
+            <div class="info-row">
+                <span class="info-label"><i class="fas fa-user"></i> Username</span>
+                <span class="info-value" id="profileUsername">User</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label"><i class="fas fa-calendar-alt"></i> Member Since</span>
+                <span class="info-value" id="profileMemberSince">Today</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label"><i class="fas fa-chart-line"></i> Overall Average</span>
+                <span class="info-value" id="profileOverallAvg">0%</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label"><i class="fas fa-book"></i> Subjects</span>
+                <span class="info-value" id="profileTotalSubjects">0</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label"><i class="fas fa-tasks"></i> Assignments</span>
+                <span class="info-value" id="profileTotalAssignments">0</span>
+            </div>
+        </div>
+        
+        <!-- Change Password -->
+        <div class="profile-section">
+            <h3><i class="fas fa-key"></i> Change Password</h3>
+            <p class="section-hint">Use a strong, unique password for better security.</p>
+            
+            <div class="password-form">
+                <div class="input-group">
+                    <label for="profileCurrentPassword">Current Password</label>
+                    <div class="password-input-wrapper">
+                        <input type="password" id="profileCurrentPassword" placeholder="Enter current password" autocomplete="current-password" />
+                        <button type="button" class="toggle-password-btn" onclick="toggleProfilePassword('profileCurrentPassword', this)">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="input-group">
+                    <label for="profileNewPassword">New Password</label>
+                    <div class="password-input-wrapper">
+                        <input type="password" id="profileNewPassword" placeholder="Enter new password" autocomplete="new-password" />
+                        <button type="button" class="toggle-password-btn" onclick="toggleProfilePassword('profileNewPassword', this)">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                    <div id="profilePasswordStrength" class="password-strength"></div>
+                </div>
+                
+                <div class="input-group">
+                    <label for="profileConfirmPassword">Confirm New Password</label>
+                    <div class="password-input-wrapper">
+                        <input type="password" id="profileConfirmPassword" placeholder="Confirm new password" autocomplete="new-password" />
+                        <button type="button" class="toggle-password-btn" onclick="toggleProfilePassword('profileConfirmPassword', this)">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <button class="btn btn-blue" onclick="changePassword()">
+                    <i class="fas fa-save"></i> Update Password
+                </button>
+                
+                <div id="profilePasswordError" class="error-msg"></div>
+                <div id="profilePasswordSuccess" class="success-msg"></div>
+            </div>
+        </div>
+        
+        <!-- Danger Zone -->
+        <div class="profile-section danger-zone">
+            <h3><i class="fas fa-exclamation-triangle"></i> Danger Zone</h3>
+            <p class="section-hint">Once you delete your account, there is no going back. All your data will be permanently removed.</p>
+            
+            <div class="danger-actions">
+                <button class="btn btn-red" onclick="deleteAccount()">
+                    <i class="fas fa-trash"></i> Delete Account
+                </button>
+                <button class="btn btn-red" onclick="clearAllData()" style="background: linear-gradient(135deg,#dc2626,#7f1d1d);">
+                    <i class="fas fa-bomb"></i> Clear All Data (Nuclear)
+                </button>
+            </div>
+            
+            <div id="profileDeleteError" class="error-msg"></div>
+            <div id="profileDeleteSuccess" class="success-msg"></div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,292 @@
+/* ============================================================
+   PROFILE PAGE STYLES
+   ============================================================ */
+
+.profile-page {
+    max-width: 700px;
+    margin: 0 auto;
+    padding: 10px 0;
+}
+
+.profile-page h2 {
+    color: #1e293b;
+    font-size: 1.5rem;
+    margin-bottom: 24px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid #e5e7eb;
+}
+
+.profile-page h3 {
+    color: #1e293b;
+    font-size: 1.15rem;
+    margin-bottom: 12px;
+}
+
+.profile-page .section-hint {
+    color: #64748b;
+    font-size: 0.9rem;
+    margin-bottom: 16px;
+}
+
+/* ----- Profile Picture ----- */
+.profile-pic-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 30px;
+    padding: 20px;
+    background: #f8fafc;
+    border-radius: 16px;
+    border: 1px solid #e5e7eb;
+}
+
+.profile-pic-wrapper {
+    position: relative;
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    overflow: hidden;
+    border: 4px solid #4f46e5;
+    cursor: pointer;
+    margin-bottom: 12px;
+}
+
+.profile-pic-wrapper img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    background: #f1f5f9;
+}
+
+.profile-pic-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    color: white;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    cursor: pointer;
+}
+
+.profile-pic-wrapper:hover .profile-pic-overlay {
+    opacity: 1;
+}
+
+.profile-pic-overlay i {
+    font-size: 1.8rem;
+    margin-bottom: 4px;
+}
+
+.profile-pic-overlay span {
+    font-size: 0.8rem;
+}
+
+.profile-pic-section input[type="file"] {
+    display: none;
+}
+
+.profile-pic-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 8px;
+}
+
+.profile-pic-actions .btn {
+    padding: 6px 14px;
+    font-size: 0.85rem;
+    border-radius: 20px;
+}
+
+/* ----- Profile Info ----- */
+.profile-info {
+    background: #f8fafc;
+    border-radius: 12px;
+    padding: 16px 20px;
+    margin-bottom: 30px;
+    border: 1px solid #e5e7eb;
+}
+
+.info-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.info-row:last-child {
+    border-bottom: none;
+}
+
+.info-label {
+    color: #64748b;
+    font-weight: 500;
+}
+
+.info-label i {
+    width: 20px;
+    margin-right: 8px;
+    color: #4f46e5;
+}
+
+.info-value {
+    font-weight: 600;
+    color: #1e293b;
+}
+
+/* ----- Password Form ----- */
+.password-form {
+    background: #f8fafc;
+    padding: 20px;
+    border-radius: 12px;
+    border: 1px solid #e5e7eb;
+}
+
+.password-form .input-group {
+    margin-bottom: 16px;
+}
+
+.password-form .input-group label {
+    display: block;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: #475569;
+    margin-bottom: 4px;
+}
+
+.password-input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.password-input-wrapper input {
+    width: 100%;
+    padding: 10px 44px 10px 14px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    font-size: 1rem;
+    background: white;
+    transition: border 0.2s;
+}
+
+.password-input-wrapper input:focus {
+    outline: none;
+    border-color: #4f46e5;
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+}
+
+.password-input-wrapper .toggle-password-btn {
+    position: absolute;
+    right: 10px;
+    background: none;
+    border: none;
+    color: #94a3b8;
+    cursor: pointer;
+    font-size: 1.1rem;
+    padding: 4px;
+}
+
+.password-input-wrapper .toggle-password-btn:hover {
+    color: #4f46e5;
+}
+
+.password-form .btn {
+    width: 100%;
+    justify-content: center;
+}
+
+/* ----- Password Strength ----- */
+#profilePasswordStrength {
+    font-size: 0.85rem;
+    margin-top: 6px;
+    min-height: 20px;
+}
+
+#profilePasswordStrength.weak { color: #ef4444; }
+#profilePasswordStrength.medium { color: #f59e0b; }
+#profilePasswordStrength.strong { color: #10b981; }
+#profilePasswordStrength.very-strong { color: #3b82f6; }
+
+/* ----- Danger Zone ----- */
+.danger-zone {
+    border: 2px solid #fecaca;
+    background: #fef2f2;
+}
+
+.danger-zone h3 {
+    color: #dc2626;
+}
+
+.danger-actions {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.danger-actions .btn {
+    flex: 1;
+    min-width: 180px;
+    justify-content: center;
+}
+
+/* ----- Messages ----- */
+.profile-page .error-msg {
+    color: #ef4444;
+    font-size: 0.9rem;
+    margin-top: 12px;
+    min-height: 20px;
+}
+
+.profile-page .success-msg {
+    color: #10b981;
+    font-size: 0.9rem;
+    margin-top: 12px;
+    min-height: 20px;
+}
+
+/* ----- Responsive ----- */
+@media (max-width: 767px) {
+    .profile-page {
+        padding: 0;
+    }
+    
+    .profile-pic-wrapper {
+        width: 100px;
+        height: 100px;
+    }
+    
+    .info-row {
+        flex-direction: column;
+        gap: 4px;
+    }
+    
+    .danger-actions {
+        flex-direction: column;
+    }
+    
+    .danger-actions .btn {
+        min-width: auto;
+    }
+}
+
+@media (max-width: 480px) {
+    .profile-pic-wrapper {
+        width: 80px;
+        height: 80px;
+    }
+    
+    .profile-pic-overlay i {
+        font-size: 1.2rem;
+    }
+    
+    .profile-pic-overlay span {
+        font-size: 0.7rem;
+    }
+}
