@@ -26,6 +26,7 @@ function togglePassword(inputId, button) {
 }
 
 function switchTab(tab) {
+    console.log('switchTab called with:', tab);
     const loginSection = document.getElementById('loginSection');
     const registerSection = document.getElementById('registerSection');
     const tabLogin = document.getElementById('tabLogin');
@@ -117,9 +118,22 @@ async function validateUser(username, password) {
 // =============================================================
 
 document.addEventListener('DOMContentLoaded', function() {
-    // ---- Tab switching ----
-    document.getElementById('tabLogin').addEventListener('click', () => switchTab('login'));
-    document.getElementById('tabRegister').addEventListener('click', () => switchTab('register'));
+    console.log('DOM fully loaded – script running');
+
+    // ---- Tab switching with delegation ----
+    const tabBar = document.querySelector('.tab-bar');
+    if (!tabBar) {
+        console.error('Tab bar not found!');
+        return;
+    }
+
+    tabBar.addEventListener('click', function(e) {
+        const tabBtn = e.target.closest('.tab-btn');
+        if (!tabBtn) return;
+        console.log('Tab clicked:', tabBtn.id);
+        const tab = tabBtn.id === 'tabLogin' ? 'login' : 'register';
+        switchTab(tab);
+    });
 
     // ---- Toggle password (delegated) ----
     document.querySelectorAll('.toggle-password').forEach(btn => {
@@ -261,12 +275,17 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // ---- Help link ----
-    document.querySelector('.footer-help').addEventListener('click', function(e) {
-        e.preventDefault();
-        alert('Contact your administrator for help.');
-    });
+    const helpLink = document.querySelector('.footer-help');
+    if (helpLink) {
+        helpLink.addEventListener('click', function(e) {
+            e.preventDefault();
+            alert('Contact your administrator for help.');
+        });
+    }
+
+    console.log('All event listeners attached.');
 });
 
-// These are still exposed in case they’re needed elsewhere
+// Expose functions globally if needed
 window.togglePassword = togglePassword;
 window.switchTab = switchTab;
