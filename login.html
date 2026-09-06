@@ -4,9 +4,9 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Login – Academic Tracker</title>
+    <!-- Font Awesome – ensure your CSP allows 'https://cdnjs.cloudflare.com' -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     <link rel="stylesheet" href="login.css" />
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' https://cdnjs.cloudflare.com; script-src 'self' https://cdnjs.cloudflare.com; img-src 'self' data:;" />
 </head>
 <body>
     <div class="login-card">
@@ -15,73 +15,64 @@
 
         <!-- Tabs -->
         <div class="tab-bar">
-            <button class="tab-btn active" id="tabLogin" onclick="switchTab('login')">Login</button>
-            <button class="tab-btn" id="tabRegister" onclick="switchTab('register')">Register</button>
+            <button class="tab-btn active" id="tabLogin">Login</button>
+            <button class="tab-btn" id="tabRegister">Register</button>
         </div>
 
-        <!-- ===== LOGIN FORM ===== -->
+        <!-- Login Form -->
         <div class="form-section active" id="loginSection">
-            <form id="loginForm" autocomplete="on">
+            <form id="loginForm" autocomplete="off">
                 <div class="input-group">
                     <label for="loginUsername">Username</label>
-                    <input type="text" id="loginUsername" placeholder="Enter your username" required autocomplete="username" />
+                    <input type="text" id="loginUsername" placeholder="Enter your username" required />
                 </div>
-
                 <div class="input-group">
                     <label for="loginPassword">Password</label>
-                    <input type="password" id="loginPassword" placeholder="Enter your password" required autocomplete="current-password" />
-                    <button type="button" class="toggle-password" onclick="togglePassword('loginPassword', this)">
+                    <input type="password" id="loginPassword" placeholder="Enter your password" required />
+                    <button type="button" class="toggle-password" data-target="loginPassword">
                         <i class="fas fa-eye"></i>
                     </button>
                 </div>
-
                 <div id="loginHint" class="hint-text"></div>
-
                 <button type="submit" class="btn-primary" id="loginBtn">
                     <span id="loginBtnText">Login</span>
                 </button>
             </form>
-
             <div id="loginError" class="error-msg"></div>
             <div id="loginSuccess" class="success-msg"></div>
             <div id="loginLoading" class="loading-msg">⏳ Validating…</div>
         </div>
 
-        <!-- ===== REGISTER FORM ===== -->
+        <!-- Register Form -->
         <div class="form-section" id="registerSection">
             <form id="registerForm" autocomplete="off">
                 <div class="input-group">
                     <label for="regUsername">Username</label>
-                    <input type="text" id="regUsername" placeholder="Choose a username" required autocomplete="username" />
+                    <input type="text" id="regUsername" placeholder="Choose a username" required />
                 </div>
-
                 <div class="input-group">
                     <label for="regPassword">Password</label>
-                    <input type="password" id="regPassword" placeholder="Choose a password" required autocomplete="new-password" />
-                    <button type="button" class="toggle-password" onclick="togglePassword('regPassword', this)">
+                    <input type="password" id="regPassword" placeholder="Choose a password" required />
+                    <button type="button" class="toggle-password" data-target="regPassword">
                         <i class="fas fa-eye"></i>
                     </button>
-                    <div id="passwordStrength" class="password-strength"></div>
                 </div>
-
                 <div class="input-group">
                     <label for="regHint">Password Hint (optional)</label>
-                    <input type="text" id="regHint" placeholder="e.g., 'My favorite pet'" autocomplete="off" />
+                    <input type="text" id="regHint" placeholder="e.g., 'My favorite pet'" />
                 </div>
-
                 <button type="submit" class="btn-primary" id="registerBtn">
                     <span id="registerBtnText">Create Account</span>
                 </button>
             </form>
-
             <div id="registerError" class="error-msg"></div>
             <div id="registerSuccess" class="success-msg"></div>
             <div id="registerLoading" class="loading-msg">⏳ Creating account…</div>
         </div>
 
         <div class="footer">
-            <p>🔒 Passwords are hashed locally. Use a strong, unique password.</p>
-            <p style="margin-top:4px;"><a href="#" onclick="alert('Contact your administrator for help.')">Need help?</a></p>
+            <p>🔒 Passwords are hashed locally.</p>
+            <p><a href="#" class="footer-help">Need help?</a></p>
         </div>
     </div>
 
