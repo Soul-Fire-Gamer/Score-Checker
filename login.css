@@ -162,3 +162,12 @@ body {
     from { opacity: 0; transform: translateY(8px); }
     to { opacity: 1; transform: translateY(0); }
 }
+.password-strength {
+    font-size: 0.85rem;
+    margin-top: 6px;
+    min-height: 20px;
+}
+.password-strength.weak { color: #ef4444; }
+.password-strength.medium { color: #f59e0b; }
+.password-strength.strong { color: #10b981; }
+.password-strength.very-strong { color: #3b82f6; }
