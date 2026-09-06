@@ -53,6 +53,25 @@ function clearMessages() {
 }
 
 // =============================================================
+//  PASSWORD STRENGTH CHECKER
+// =============================================================
+
+function checkPasswordStrength(password) {
+    let score = 0;
+    if (password.length >= 8) score++;
+    if (password.length >= 12) score++;
+    if (/[a-z]/.test(password) && /[A-Z]/.test(password)) score++;
+    if (/\d/.test(password)) score++;
+    if (/[^a-zA-Z0-9]/.test(password)) score++;
+
+    if (score <= 1) return { label: 'Weak', class: 'weak', width: '25%' };
+    if (score === 2) return { label: 'Fair', class: 'fair', width: '50%' };
+    if (score === 3 || score === 4) return { label: 'Good', class: 'good', width: '75%' };
+    if (score >= 5) return { label: 'Strong', class: 'strong', width: '100%' };
+    return { label: '', class: '', width: '0%' };
+}
+
+// =============================================================
 //  USER DATABASE MANAGEMENT
 // =============================================================
 
@@ -225,6 +244,25 @@ document.addEventListener('DOMContentLoaded', function() {
     const registerSuccess = document.getElementById('registerSuccess');
     const registerLoading = document.getElementById('registerLoading');
 
+    // Password strength live update
+    const regPassword = document.getElementById('regPassword');
+    const strengthBar = document.getElementById('strengthBar');
+    const strengthText = document.getElementById('strengthText');
+
+    regPassword.addEventListener('input', function() {
+        const password = this.value;
+        if (password.length === 0) {
+            strengthBar.className = 'strength-bar';
+            strengthBar.style.width = '0%';
+            strengthText.textContent = '';
+            return;
+        }
+        const result = checkPasswordStrength(password);
+        strengthBar.className = 'strength-bar ' + result.class;
+        strengthBar.style.width = result.width;
+        strengthText.textContent = 'Strength: ' + result.label;
+    });
+
     registerForm.addEventListener('submit', async function(e) {
         e.preventDefault();
         clearMessages();
@@ -252,6 +290,10 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('regUsername').value = '';
             document.getElementById('regPassword').value = '';
             document.getElementById('regHint').value = '';
+            // Reset strength meter
+            strengthBar.className = 'strength-bar';
+            strengthBar.style.width = '0%';
+            strengthText.textContent = '';
             setTimeout(() => {
                 switchTab('login');
                 document.getElementById('loginUsername').value = username;
