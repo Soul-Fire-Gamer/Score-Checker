@@ -1,0 +1,22 @@
+<div class="dashboard-page">
+    <div class="stats-grid" id="dashboardStats">
+        <div class="stat-card"><div class="stat-value" id="totalAverage">0%</div><div class="stat-label">Total Average</div></div>
+        <div class="stat-card"><div class="stat-value" id="semester1Avg">0%</div><div class="stat-label">Semester 1</div></div>
+        <div class="stat-card"><div class="stat-value" id="semester2Avg">0%</div><div class="stat-label">Semester 2</div></div>
+        <div class="stat-card"><div class="stat-value" id="totalSubjects">0</div><div class="stat-label">Subjects</div></div>
+    </div>
+    <div class="dashboard-layout">
+        <div class="sidebar-panel">
+            <h2>Add Subject</h2>
+            <div class="input-row">
+                <input type="text" id="subjectInput" placeholder="Subject name" />
+                <button class="btn" id="addSubjectBtn">Add</button>
+            </div>
+            <h2>Your Subjects</h2>
+            <div id="subjectsList"><div class="empty-state">No subjects yet</div></div>
+        </div>
+        <div class="main-panel">
+            <div id="subjectDetail"><div class="empty-state">Select a subject</div></div>
+        </div>
+    </div>
+</div>
