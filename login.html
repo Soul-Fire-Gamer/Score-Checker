@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Login – Academic Tracker</title>
-    <!-- Font Awesome – ensure your CSP allows 'https://cdnjs.cloudflare.com' -->
+    <!-- Font Awesome – adjust CSP to allow 'https://cdnjs.cloudflare.com' -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     <link rel="stylesheet" href="login.css" />
 </head>
@@ -56,6 +56,11 @@
                     <button type="button" class="toggle-password" data-target="regPassword">
                         <i class="fas fa-eye"></i>
                     </button>
+                    <!-- Password strength meter -->
+                    <div class="strength-meter">
+                        <div class="strength-bar" id="strengthBar"></div>
+                        <span class="strength-text" id="strengthText"></span>
+                    </div>
                 </div>
                 <div class="input-group">
                     <label for="regHint">Password Hint (optional)</label>
