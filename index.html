@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Academic Tracker – Login</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .login-card {
+            background: white;
+            padding: 40px 35px;
+            border-radius: 24px;
+            max-width: 420px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            text-align: center;
+            transition: max-height 0.3s ease;
+        }
+
+        .login-card h1 {
+            color: #4f46e5;
+            font-size: 2rem;
+            margin-bottom: 8px;
+        }
+        .login-card p.subtitle {
+            color: #64748b;
+            margin-bottom: 25px;
+        }
+
+        .input-group {
+            margin-bottom: 18px;
+            text-align: left;
+            position: relative;
+        }
+        .input-group label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 600;
+            color: #475569;
+        }
+        .input-group input {
+            width: 100%;
+            padding: 12px 40px 12px 14px;
+            border: 1px solid #cbd5e1;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: border 0.2s;
+        }
+        .input-group input:focus {
+            outline: none;
+            border-color: #4f46e5;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
+        }
+        .input-group .toggle-password {
+            position: absolute;
+            right: 12px;
+            top: 42px;
+            background: none;
+            border: none;
+            color: #94a3b8;
+            cursor: pointer;
+            font-size: 1.2rem;
+            padding: 4px;
+        }
+        .input-group .toggle-password:hover {
+            color: #4f46e5;
+        }
+        .hint-text {
+            font-size: 0.85rem;
+            color: #4f46e5;
+            margin-top: 4px;
+            min-height: 20px;
+        }
+
+        .btn-primary {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin-top: 6px;
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(79, 70, 229, 0.3);
+        }
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .btn-secondary {
+            width: 100%;
+            padding: 12px;
+            background: #e5e7eb;
+            color: #475569;
+            border: none;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+            margin-top: 10px;
+        }
+        .btn-secondary:hover {
+            background: #d1d5db;
+        }
+
+        .switch-link {
+            color: #4f46e5;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .switch-link:hover {
+            text-decoration: underline;
+        }
+
+        .error-msg {
+            color: #ef4444;
+            font-size: 0.9rem;
+            margin-top: 10px;
+            min-height: 24px;
+        }
+        .success-msg {
+            color: #10b981;
+            font-size: 0.9rem;
+            margin-top: 10px;
+            min-height: 24px;
+        }
+
+        .loading-msg {
+            color: #4f46e5;
+            font-size: 0.9rem;
+            margin-top: 10px;
+            display: none;
+        }
+
+        .footer {
+            margin-top: 25px;
+            font-size: 0.85rem;
+            color: #94a3b8;
+        }
+        .footer a {
+            color: #4f46e5;
+            text-decoration: none;
+        }
+
+        /* Tabs for login/register */
+        .tab-bar {
+            display: flex;
+            gap: 4px;
+            background: #f1f5f9;
+            padding: 4px;
+            border-radius: 14px;
+            margin-bottom: 25px;
+        }
+        .tab-btn {
+            flex: 1;
+            padding: 10px 0;
+            background: transparent;
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 15px;
+            color: #64748b;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .tab-btn.active {
+            background: white;
+            color: #4f46e5;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+        .tab-btn:hover:not(.active) {
+            color: #1e293b;
+        }
+
+        .form-section {
+            display: none;
+        }
+        .form-section.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+
+<div class="login-card">
+    <h1>📚 Academic Tracker</h1>
+    <p class="subtitle">Sign in or create an account</p>
+
+    <!-- Tabs -->
+    <div class="tab-bar">
+        <button class="tab-btn active" id="tabLogin" onclick="switchTab('login')">Login</button>
+        <button class="tab-btn" id="tabRegister" onclick="switchTab('register')">Register</button>
+    </div>
+
+    <!-- ===== LOGIN FORM ===== -->
+    <div class="form-section active" id="loginSection">
+        <form id="loginForm" autocomplete="off">
+            <div class="input-group">
+                <label for="loginUsername">Username</label>
+                <input type="text" id="loginUsername" placeholder="Enter your username" required />
+            </div>
+
+            <div class="input-group">
+                <label for="loginPassword">Password</label>
+                <input type="password" id="loginPassword" placeholder="Enter your password" required />
+                <button type="button" class="toggle-password" onclick="togglePassword('loginPassword', this)">
+                    <i class="fas fa-eye"></i>
+                </button>
+            </div>
+
+            <div id="loginHint" class="hint-text"></div>
+
+            <button type="submit" class="btn-primary" id="loginBtn">
+                <span id="loginBtnText">Login</span>
+            </button>
+        </form>
+
+        <div id="loginError" class="error-msg"></div>
+        <div id="loginSuccess" class="success-msg"></div>
+        <div id="loginLoading" class="loading-msg">⏳ Validating…</div>
+    </div>
+
+    <!-- ===== REGISTER FORM ===== -->
+    <div class="form-section" id="registerSection">
+        <form id="registerForm" autocomplete="off">
+            <div class="input-group">
+                <label for="regUsername">Username</label>
+                <input type="text" id="regUsername" placeholder="Choose a username" required />
+            </div>
+
+            <div class="input-group">
+                <label for="regPassword">Password</label>
+                <input type="password" id="regPassword" placeholder="Choose a password" required />
+                <button type="button" class="toggle-password" onclick="togglePassword('regPassword', this)">
+                    <i class="fas fa-eye"></i>
+                </button>
+            </div>
+
+            <div class="input-group">
+                <label for="regHint">Password Hint (optional)</label>
+                <input type="text" id="regHint" placeholder="e.g., 'My favorite pet'" />
+            </div>
+
+            <button type="submit" class="btn-primary" id="registerBtn">
+                <span id="registerBtnText">Create Account</span>
+            </button>
+        </form>
+
+        <div id="registerError" class="error-msg"></div>
+        <div id="registerSuccess" class="success-msg"></div>
+        <div id="registerLoading" class="loading-msg">⏳ Creating account…</div>
+    </div>
+
+    <div class="footer">
+        <p>🔒 Passwords are hashed locally.</p>
+        <p style="margin-top:4px;">
+            <a href="#" onclick="alert('Contact your administrator for help.')">Need help?</a>
+        </p>
+    </div>
+</div>
+
+<script>
+    // =============================================================
+    //  UTILITY FUNCTIONS
+    // =============================================================
+
+    // Hash a password using SHA-256 (Web Crypto API)
+    async function hashPassword(password) {
+        const encoder = new TextEncoder();
+        const data = encoder.encode(password);
+        const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+        const hashArray = Array.from(new Uint8Array(hashBuffer));
+        return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+
+    // Toggle password visibility
+    function togglePassword(inputId, button) {
+        const input = document.getElementById(inputId);
+        const icon = button.querySelector('i');
+        if (input.type === 'password') {
+            input.type = 'text';
+            icon.classList.remove('fa-eye');
+            icon.classList.add('fa-eye-slash');
+        } else {
+            input.type = 'password';
+            icon.classList.remove('fa-eye-slash');
+            icon.classList.add('fa-eye');
+        }
+    }
+
+    // Tab switching
+    function switchTab(tab) {
+        document.querySelectorAll('.form-section').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+
+        if (tab === 'login') {
+            document.getElementById('loginSection').classList.add('active');
+            document.getElementById('tabLogin').classList.add('active');
+            clearMessages();
+        } else {
+            document.getElementById('registerSection').classList.add('active');
+            document.getElementById('tabRegister').classList.add('active');
+            clearMessages();
+        }
+    }
+
+    function clearMessages() {
+        ['loginError', 'loginSuccess', 'registerError', 'registerSuccess'].forEach(id => {
+            document.getElementById(id).textContent = '';
+        });
+    }
+
+    // =============================================================
+    //  USER DATABASE MANAGEMENT
+    // =============================================================
+
+    const DB_KEY = 'academicTracker_users';
+
+    // Load users from localStorage (merge with static JSON later)
+    function getLocalUsers() {
+        const stored = localStorage.getItem(DB_KEY);
+        return stored ? JSON.parse(stored) : [];
+    }
+
+    function saveLocalUsers(users) {
+        localStorage.setItem(DB_KEY, JSON.stringify(users));
+    }
+
+    // Fetch static users.json from the repository
+    async function fetchStaticUsers() {
+        try {
+            const response = await fetch('users.json');
+            if (!response.ok) throw new Error('Failed to load users.json');
+            return await response.json();
+        } catch (err) {
+            console.warn('Could not load static users.json:', err);
+            return [];
+        }
+    }
+
+    // Merge static and local users (local overrides)
+    async function getMergedUsers() {
+        const staticUsers = await fetchStaticUsers();
+        const localUsers = getLocalUsers();
+
+        // Build a map by username, local takes precedence
+        const userMap = new Map();
+        staticUsers.forEach(u => userMap.set(u.username.toLowerCase(), u));
+        localUsers.forEach(u => userMap.set(u.username.toLowerCase(), u));
+
+        return Array.from(userMap.values());
+    }
+
+    // Add a new user to localStorage (does not modify the static file)
+    async function addUser(username, password, hint) {
+        const users = getLocalUsers();
+        // Check if already exists in local
+        if (users.some(u => u.username.toLowerCase() === username.toLowerCase())) {
+            throw new Error('Username already exists locally.');
+        }
+        // Also check against merged (static + local) to avoid duplicates
+        const merged = await getMergedUsers();
+        if (merged.some(u => u.username.toLowerCase() === username.toLowerCase())) {
+            throw new Error('Username already exists (including static users).');
+        }
+
+        const hashed = await hashPassword(password);
+        users.push({
+            username: username,
+            passwordHash: hashed,
+            hint: hint || ''
+        });
+        saveLocalUsers(users);
+        return true;
+    }
+
+    // Validate login credentials against merged users
+    async function validateUser(username, password) {
+        const users = await getMergedUsers();
+        const user = users.find(u => u.username.toLowerCase() === username.toLowerCase());
+        if (!user) return null;
+
+        const hashed = await hashPassword(password);
+        if (hashed === user.passwordHash) {
+            return { username: user.username, hint: user.hint || '' };
+        }
+        return null;
+    }
+
+    // =============================================================
+    //  UI HANDLERS
+    // =============================================================
+
+    // Login form
+    const loginForm = document.getElementById('loginForm');
+    const loginBtn = document.getElementById('loginBtn');
+    const loginBtnText = document.getElementById('loginBtnText');
+    const loginError = document.getElementById('loginError');
+    const loginSuccess = document.getElementById('loginSuccess');
+    const loginLoading = document.getElementById('loginLoading');
+    const loginHint = document.getElementById('loginHint');
+
+    loginForm.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        clearMessages();
+
+        const username = document.getElementById('loginUsername').value.trim();
+        const password = document.getElementById('loginPassword').value.trim();
+
+        if (!username || !password) {
+            loginError.textContent = 'Please fill in both fields.';
+            return;
+        }
+
+        // Show loading
+        loginBtn.disabled = true;
+        loginBtnText.textContent = 'Checking…';
+        loginLoading.style.display = 'block';
+
+        try {
+            const result = await validateUser(username, password);
+            if (result) {
+                // Success
+                loginSuccess.textContent = '✅ Login successful! Redirecting…';
+                loginLoading.style.display = 'none';
+                // Store current user in localStorage (to be used by app.html)
+                localStorage.setItem('currentUser', result.username);
+                // Show hint (if any)
+                if (result.hint) {
+                    loginHint.textContent = '💡 Hint: ' + result.hint;
+                }
+                // Redirect to app.html after a short delay
+                setTimeout(() => {
+                    window.location.href = 'app.html';
+                }, 800);
+            } else {
+                // Invalid credentials – show hint if user exists
+                const users = await getMergedUsers();
+                const found = users.find(u => u.username.toLowerCase() === username.toLowerCase());
+                if (found) {
+                    if (found.hint) {
+                        loginHint.textContent = '💡 Hint: ' + found.hint;
+                    } else {
+                        loginHint.textContent = 'No hint provided for this user.';
+                    }
+                    loginError.textContent = '❌ Incorrect password.';
+                } else {
+                    loginHint.textContent = '';
+                    loginError.textContent = '❌ Username not found.';
+                }
+                loginLoading.style.display = 'none';
+                loginBtn.disabled = false;
+                loginBtnText.textContent = 'Login';
+            }
+        } catch (err) {
+            console.error(err);
+            loginError.textContent = '❌ An error occurred. Please try again.';
+            loginLoading.style.display = 'none';
+            loginBtn.disabled = false;
+            loginBtnText.textContent = 'Login';
+        }
+    });
+
+    // Show hint when username field loses focus
+    document.getElementById('loginUsername').addEventListener('blur', async function() {
+        const username = this.value.trim();
+        if (!username) {
+            loginHint.textContent = '';
+            return;
+        }
+        const users = await getMergedUsers();
+        const found = users.find(u => u.username.toLowerCase() === username.toLowerCase());
+        if (found && found.hint) {
+            loginHint.textContent = '💡 Hint: ' + found.hint;
+        } else {
+            loginHint.textContent = '';
+        }
+    });
+
+    // Register form
+    const registerForm = document.getElementById('registerForm');
+    const registerBtn = document.getElementById('registerBtn');
+    const registerBtnText = document.getElementById('registerBtnText');
+    const registerError = document.getElementById('registerError');
+    const registerSuccess = document.getElementById('registerSuccess');
+    const registerLoading = document.getElementById('registerLoading');
+
+    registerForm.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        clearMessages();
+
+        const username = document.getElementById('regUsername').value.trim();
+        const password = document.getElementById('regPassword').value.trim();
+        const hint = document.getElementById('regHint').value.trim();
+
+        if (!username || !password) {
+            registerError.textContent = 'Please fill in both fields.';
+            return;
+        }
+        if (password.length < 4) {
+            registerError.textContent = 'Password must be at least 4 characters.';
+            return;
+        }
+
+        registerBtn.disabled = true;
+        registerBtnText.textContent = 'Creating…';
+        registerLoading.style.display = 'block';
+
+        try {
+            await addUser(username, password, hint);
+            registerSuccess.textContent = '✅ Account created! You can now log in.';
+            registerLoading.style.display = 'none';
+            registerBtn.disabled = false;
+            registerBtnText.textContent = 'Create Account';
+            // Clear fields
+            document.getElementById('regUsername').value = '';
+            document.getElementById('regPassword').value = '';
+            document.getElementById('regHint').value = '';
+            // Switch to login tab after a moment
+            setTimeout(() => {
+                switchTab('login');
+                // Pre-fill username
+                document.getElementById('loginUsername').value = username;
+                document.getElementById('loginPassword').focus();
+            }, 1500);
+        } catch (err) {
+            registerError.textContent = '❌ ' + err.message;
+            registerLoading.style.display = 'none';
+            registerBtn.disabled = false;
+            registerBtnText.textContent = 'Create Account';
+        }
+    });
+
+    // =============================================================
+    //  INITIALIZATION
+    // =============================================================
+
+    // On load, optionally pre‑fill login with the last used username
+    window.addEventListener('load', function() {
+        const lastUser = localStorage.getItem('currentUser');
+        if (lastUser) {
+            document.getElementById('loginUsername').value = lastUser;
+            document.getElementById('loginPassword').focus();
+        } else {
+            document.getElementById('loginUsername').focus();
+        }
+    });
+
+    // If already logged in, redirect to app immediately (optional)
+    // if (localStorage.getItem('currentUser')) {
+    //     window.location.href = 'app.html';
+    // }
+
+    // Expose functions to global scope for inline onclick
+    window.switchTab = switchTab;
+    window.togglePassword = togglePassword;
+</script>
+</body>
+</html>
