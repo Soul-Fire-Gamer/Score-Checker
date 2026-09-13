@@ -12,47 +12,10 @@ body {
     padding: 20px;
 }
 
-/* ---------- STATS ---------- */
-.stats-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-    gap: 20px;
-    padding: 0 0 24px 0;
-    max-width: 1400px;
-    margin: 0 auto;
-}
-.stat-card {
-    background: white;
-    padding: 20px;
-    border-radius: 16px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.04);
-    text-align: center;
-    position: relative;
-    overflow: hidden;
-}
-.stat-card::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0;
-    width: 4px; height: 100%;
-    background: linear-gradient(to bottom, #4f46e5, #7c3aed);
-}
-.stat-card .stat-value {
-    font-size: 1.8rem;
-    font-weight: 800;
-    color: #4f46e5;
-    margin-bottom: 4px;
-}
-.stat-card .stat-label {
-    color: #64748b;
-    font-size: 0.85rem;
-    font-weight: 500;
-}
-
 /* ---------- CONTAINER ---------- */
 .container {
     max-width: 1400px;
-    margin: 0 auto 40px;
+    margin: 0 auto;
     background: white;
     border-radius: 20px;
     box-shadow: 0 10px 40px rgba(0,0,0,0.06);
@@ -60,8 +23,8 @@ body {
 }
 .dashboard-layout {
     display: grid;
-    grid-template-columns: 340px 1fr;
-    min-height: 70vh;
+    grid-template-columns: 320px 1fr;
+    min-height: 80vh;
 }
 @media (max-width: 900px) {
     .dashboard-layout { grid-template-columns: 1fr; }
@@ -82,7 +45,6 @@ body {
     color: #1e293b;
     margin-bottom: 12px;
 }
-.sidebar-panel h2:not(:first-child) { margin-top: 28px; }
 
 /* ---------- MAIN PANEL ---------- */
 .main-panel {
@@ -98,7 +60,7 @@ body {
 .input-row {
     display: flex;
     gap: 8px;
-    margin-bottom: 10px;
+    margin-bottom: 16px;
 }
 .input-row input {
     flex: 1;
