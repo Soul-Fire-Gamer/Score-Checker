@@ -3,36 +3,32 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Edit Subjects – Academic Tracker</title>
+    <title>All Subjects – Academic Tracker</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     <link rel="stylesheet" href="subjects.css" />
 </head>
 <body>
 
-    <!-- ===== MAIN LAYOUT ===== -->
-    <div class="container">
-        <div class="dashboard-layout">
-            
-            <!-- LEFT SIDEBAR: Subject List -->
-            <div class="sidebar-panel">
-                <h2>Your Subjects</h2>
-                <div class="input-row">
-                    <input type="text" id="subjectInput" placeholder="Add a new subject..." />
-                    <button class="btn" id="addSubjectBtn"><i class="fas fa-plus"></i></button>
-                </div>
-                <div class="subjects-list" id="subjectsList">
-                    <div class="empty-state"><i class="fas fa-book"></i><p>No subjects yet</p></div>
-                </div>
-            </div>
+    <div class="subjects-page">
+        <h2><i class="fas fa-book"></i> All Subjects</h2>
 
-            <!-- RIGHT MAIN PANEL: Subject Editor -->
-            <div class="main-panel" id="subjectDetail">
-                <div class="empty-state">
-                    <i class="fas fa-hand-pointer"></i>
-                    <h2>Select a Subject to Edit</h2>
-                    <p>Choose a subject from the left to manage its quarters, assignments, and final exam.</p>
-                </div>
-            </div>
+        <!-- Empty state (shown when no subjects) -->
+        <div id="emptyState" class="empty-state">
+            <i class="fas fa-book"></i>
+            <p>No subjects yet. Go to Dashboard to add one.</p>
+        </div>
+
+        <!-- Subject list -->
+        <div id="subjectsList" class="subjects-list"></div>
+    </div>
+
+    <!-- ===== EDITOR MODAL ===== -->
+    <div class="modal-overlay" id="editorModal">
+        <div class="modal-content">
+            <button class="modal-close" id="closeModalBtn" aria-label="Close">
+                <i class="fas fa-times"></i>
+            </button>
+            <div id="editorContainer"></div>
         </div>
     </div>
 
