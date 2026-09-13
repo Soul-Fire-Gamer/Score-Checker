@@ -29,13 +29,13 @@ function initUser() {
 }
 
 // ================================================================
-//  PERSISTENCE
+//  PERSISTENCE (Shared with Dashboard)
 // ================================================================
 function getDataKey() { return STORAGE_KEYS.USER_DATA + currentUser; }
 
 function saveData() {
+    // Saves to the exact same localStorage key the Dashboard reads from
     localStorage.setItem(getDataKey(), JSON.stringify(subjects));
-    updateDashboardTotals();
     renderSubjects();
 }
 
@@ -73,7 +73,7 @@ function addSubject() {
     const name = input.value.trim();
     if (!name) { alert('Please enter a subject name'); return; }
 
-    subjects.push({
+    const newSubject = {
         id: Date.now(),
         name,
         quarters: {
@@ -85,10 +85,14 @@ function addSubject() {
         averages: { q1: 0, q2: 0, q3: 0, q4: 0, semester1: 0, semester2: 0, total: 0 },
         grades: { q1: 'N/A', q2: 'N/A', q3: 'N/A', q4: 'N/A', semester1: 'N/A', semester2: 'N/A', total: 'N/A' },
         finalExam: null
-    });
+    };
+    
+    subjects.push(newSubject);
     saveData();
     input.value = '';
-    input.focus();
+    
+    // Auto-select the newly created subject
+    selectSubject(newSubject.id);
 }
 
 function selectSubject(id) {
@@ -151,27 +155,8 @@ function countAssignments(subject) {
         sum + subject.quarters[q].minor.length + subject.quarters[q].major.length, 0);
 }
 
-function updateDashboardTotals() {
-    const withScores = subjects.filter(s => s.averages.total > 0);
-    if (withScores.length === 0) {
-        document.getElementById('totalAverage').textContent = '0.0%';
-        document.getElementById('semester1Avg').textContent = '0.0%';
-        document.getElementById('semester2Avg').textContent = '0.0%';
-        document.getElementById('totalSubjects').textContent = subjects.length;
-        return;
-    }
-    const total = withScores.reduce((sum, s) => sum + s.averages.total, 0) / withScores.length;
-    const sem1 = withScores.reduce((sum, s) => sum + s.averages.semester1, 0) / withScores.length;
-    const sem2 = withScores.reduce((sum, s) => sum + s.averages.semester2, 0) / withScores.length;
-
-    document.getElementById('totalAverage').textContent = total.toFixed(1) + '%';
-    document.getElementById('semester1Avg').textContent = sem1.toFixed(1) + '%';
-    document.getElementById('semester2Avg').textContent = sem2.toFixed(1) + '%';
-    document.getElementById('totalSubjects').textContent = subjects.length;
-}
-
 // ================================================================
-//  RENDER SUBJECT DETAIL
+//  RENDER SUBJECT DETAIL (EDITOR)
 // ================================================================
 function renderSubjectDetail() {
     const container = document.getElementById('subjectDetail');
@@ -179,8 +164,8 @@ function renderSubjectDetail() {
         container.innerHTML = `
             <div class="empty-state">
                 <i class="fas fa-hand-pointer"></i>
-                <h2>Select a Subject</h2>
-                <p>Choose a subject to add, edit, or manage assignments</p>
+                <h2>Select a Subject to Edit</h2>
+                <p>Choose a subject from the left to manage its quarters, assignments, and final exam.</p>
             </div>`;
         return;
     }
@@ -766,7 +751,6 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     loadData();
-    updateDashboardTotals();
     renderSubjects();
     renderSubjectDetail();
 });
