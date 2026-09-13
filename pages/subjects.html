@@ -3,55 +3,34 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Subjects – Academic Tracker</title>
+    <title>Edit Subjects – Academic Tracker</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     <link rel="stylesheet" href="subjects.css" />
 </head>
 <body>
 
-    <!-- ===== STATS ===== -->
-    <div class="stats-grid">
-        <div class="stat-card">
-            <div class="stat-value" id="totalAverage">0.0%</div>
-            <div class="stat-label">Total Average</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-value" id="semester1Avg">0.0%</div>
-            <div class="stat-label">Semester 1</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-value" id="semester2Avg">0.0%</div>
-            <div class="stat-label">Semester 2</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-value" id="totalSubjects">0</div>
-            <div class="stat-label">Subjects</div>
-        </div>
-    </div>
-
     <!-- ===== MAIN LAYOUT ===== -->
     <div class="container">
         <div class="dashboard-layout">
             
-            <!-- LEFT SIDEBAR: Add + List -->
+            <!-- LEFT SIDEBAR: Subject List -->
             <div class="sidebar-panel">
-                <h2>Add Subject</h2>
-                <div class="input-row">
-                    <input type="text" id="subjectInput" placeholder="Subject name" />
-                    <button class="btn" id="addSubjectBtn"><i class="fas fa-plus"></i> Add</button>
-                </div>
                 <h2>Your Subjects</h2>
+                <div class="input-row">
+                    <input type="text" id="subjectInput" placeholder="Add a new subject..." />
+                    <button class="btn" id="addSubjectBtn"><i class="fas fa-plus"></i></button>
+                </div>
                 <div class="subjects-list" id="subjectsList">
                     <div class="empty-state"><i class="fas fa-book"></i><p>No subjects yet</p></div>
                 </div>
             </div>
 
-            <!-- RIGHT MAIN PANEL: Subject Detail -->
+            <!-- RIGHT MAIN PANEL: Subject Editor -->
             <div class="main-panel" id="subjectDetail">
                 <div class="empty-state">
                     <i class="fas fa-hand-pointer"></i>
-                    <h2>Select a Subject</h2>
-                    <p>Choose a subject to add, edit, or manage assignments</p>
+                    <h2>Select a Subject to Edit</h2>
+                    <p>Choose a subject from the left to manage its quarters, assignments, and final exam.</p>
                 </div>
             </div>
         </div>
