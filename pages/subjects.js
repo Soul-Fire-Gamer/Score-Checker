@@ -231,13 +231,6 @@ function renderEditor() {
             <h3 style="margin-bottom:12px;">Current Final Exam</h3>
             ${examDisplay}`;
 
-        // ✅ THE FIX: bind period tabs so Q1–Q4 / S1 / S2 / Total remain clickable
-        bindPeriodTabs();
-
-        document.getElementById('saveExamBtn')?.addEventListener('click', setFinalExam);
-        const delExam = document.getElementById('deleteExamBtn');
-        if (delExam) delExam.addEventListener('click', deleteFinalExam);
-        document.getElementById('examScore')?.focus();
         return;
     }
 
@@ -379,7 +372,6 @@ function renderEditor() {
                 </table>
             </div>`;
 
-        bindEditorEvents(quarterKey);
         return;
     }
 
@@ -438,7 +430,6 @@ function renderEditor() {
                 `}
             </div>`;
 
-        bindPeriodTabs();
         return;
     }
 
@@ -446,69 +437,132 @@ function renderEditor() {
 }
 
 // ================================================================
-//  EVENT BINDING
+//  ALL INTERACTION VIA DOCUMENT-LEVEL DELEGATION
+//  (one listener that never goes away — no rebinding on render)
 // ================================================================
-function bindPeriodTabs() {
-    document.querySelectorAll('#editorContainer .period-tab').forEach(tab => {
-        // Clone to prevent stacked listeners on re-render
-        const fresh = tab.cloneNode(true);
-        tab.parentNode.replaceChild(fresh, tab);
-        fresh.addEventListener('click', function () {
-            selectedPeriod = this.dataset.period;
-            renderEditor();
-        });
-    });
-}
-
-function bindEditorEvents(quarterKey) {
-    bindPeriodTabs();
-
-    document.querySelectorAll('#editorContainer .type-btn').forEach(btn => {
-        btn.addEventListener('click', function () {
-            document.querySelectorAll('#editorContainer .type-btn').forEach(b => b.classList.remove('active'));
-            this.classList.add('active');
-            const type = this.dataset.type;
-            document.getElementById(`assignmentType${type.charAt(0).toUpperCase() + type.slice(1)}`).checked = true;
-        });
-    });
-
-    document.getElementById('addAssignmentBtn')?.addEventListener('click', addAssignment);
-
-    ['assignmentName', 'scoreObtained', 'scoreMax'].forEach(id => {
-        document.getElementById(id)?.addEventListener('keypress', e => {
-            if (e.key === 'Enter') addAssignment();
-        });
-    });
-
-    const setBtn = document.getElementById('setManualBtn');
-    if (setBtn) {
-        setBtn.addEventListener('click', () => {
-            const val = document.getElementById('manualAverageInput').value;
-            setManualAverage(quarterKey, val);
-        });
-        document.getElementById('manualAverageInput')?.addEventListener('keypress', e => {
-            if (e.key === 'Enter') setManualAverage(quarterKey, e.target.value);
-        });
+document.addEventListener('click', function (e) {
+    // ---- Period tabs inside the editor ----
+    const tab = e.target.closest('#editorContainer .period-tab');
+    if (tab && tab.dataset.period) {
+        console.log('[subjects] period tab clicked:', tab.dataset.period);
+        selectedPeriod = tab.dataset.period;
+        renderEditor();
+        return;
     }
-    const clearBtn = document.getElementById('clearManualBtn');
-    if (clearBtn) clearBtn.addEventListener('click', () => clearManualAverage(quarterKey));
 
-    document.querySelectorAll('#editorContainer .edit-assignment-btn').forEach(btn => {
-        btn.addEventListener('click', function () {
-            editAssignment(this.dataset.quarter, this.dataset.type, parseInt(this.dataset.id));
-        });
-    });
-    document.querySelectorAll('#editorContainer .delete-assignment-btn').forEach(btn => {
-        btn.addEventListener('click', function () {
-            deleteAssignment(this.dataset.quarter, this.dataset.type, parseInt(this.dataset.id));
-        });
-    });
+    // ---- Assignment type toggle (Minor / Major) ----
+    const typeBtn = e.target.closest('#editorContainer .type-btn');
+    if (typeBtn) {
+        document.querySelectorAll('#editorContainer .type-btn').forEach(b => b.classList.remove('active'));
+        typeBtn.classList.add('active');
+        const type = typeBtn.dataset.type;
+        const radio = document.getElementById(`assignmentType${type.charAt(0).toUpperCase() + type.slice(1)}`);
+        if (radio) radio.checked = true;
+        return;
+    }
 
-    document.getElementById('assignmentName')?.focus();
-}
+    // ---- Add assignment ----
+    if (e.target.closest('#addAssignmentBtn')) {
+        addAssignment();
+        return;
+    }
+
+    // ---- Save final exam ----
+    if (e.target.closest('#saveExamBtn')) {
+        setFinalExam();
+        return;
+    }
+
+    // ---- Delete final exam ----
+    if (e.target.closest('#deleteExamBtn')) {
+        deleteFinalExam();
+        return;
+    }
+
+    // ---- Set manual average ----
+    if (e.target.closest('#setManualBtn')) {
+        const val = document.getElementById('manualAverageInput')?.value;
+        setManualAverage(selectedPeriod.toLowerCase(), val);
+        return;
+    }
+
+    // ---- Clear manual average ----
+    if (e.target.closest('#clearManualBtn')) {
+        clearManualAverage(selectedPeriod.toLowerCase());
+        return;
+    }
+
+    // ---- Edit assignment ----
+    const editBtn = e.target.closest('#editorContainer .edit-assignment-btn');
+    if (editBtn) {
+        editAssignment(editBtn.dataset.quarter, editBtn.dataset.type, parseInt(editBtn.dataset.id));
+        return;
+    }
+
+    // ---- Delete assignment ----
+    const delAsgBtn = e.target.closest('#editorContainer .delete-assignment-btn');
+    if (delAsgBtn) {
+        deleteAssignment(delAsgBtn.dataset.quarter, delAsgBtn.dataset.type, parseInt(delAsgBtn.dataset.id));
+        return;
+    }
+
+    // ---- Close modal via X button ----
+    if (e.target.closest('#closeModalBtn')) {
+        closeEditor();
+        return;
+    }
+
+    // ---- Close modal via backdrop click ----
+    if (e.target.id === 'editorModal') {
+        closeEditor();
+        return;
+    }
+
+    // ---- Subject list: delete subject ----
+    const delSubBtn = e.target.closest('#subjectsList .delete-subject-btn');
+    if (delSubBtn) {
+        e.stopPropagation();
+        const id = parseInt(delSubBtn.dataset.deleteId);
+        if (confirm('Delete this subject?')) {
+            subjects = subjects.filter(s => s.id !== id);
+            saveData();
+        }
+        return;
+    }
+
+    // ---- Subject list: open editor on card click ----
+    const card = e.target.closest('#subjectsList .subject-card');
+    if (card) {
+        openEditor(parseInt(card.dataset.id));
+        return;
+    }
+});
+
+// ---- Enter key delegation for editor forms ----
+document.addEventListener('keypress', function (e) {
+    if (!e.target.closest('#editorContainer')) return;
+    const id = e.target.id;
+    if (e.key !== 'Enter') return;
+
+    if (id === 'assignmentName' || id === 'scoreObtained' || id === 'scoreMax') {
+        addAssignment();
+    } else if (id === 'manualAverageInput') {
+        setManualAverage(selectedPeriod.toLowerCase(), e.target.value);
+    } else if (id === 'examScore' || id === 'examMax') {
+        setFinalExam();
+    }
+});
+
+// ---- Escape closes the modal ----
+document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') {
+        const modal = document.getElementById('editorModal');
+        if (modal && modal.classList.contains('active')) closeEditor();
+    }
+});
 
 // ================================================================
-//  ASSIGNMENT LOGIC
+//  ASSIGNMENT / EXAM / MANUAL AVERAGE LOGIC
 // ================================================================
 function addAssignment() {
     if (!selectedSubjectId) { alert('Please select a subject first'); return; }
@@ -595,9 +649,6 @@ function editAssignment(quarter, type, assignmentId) {
     renderEditor();
 }
 
-// ================================================================
-//  MANUAL AVERAGE
-// ================================================================
 function setManualAverage(quarter, average) {
     if (!selectedSubjectId) return;
     const avg = parseFloat(average);
@@ -624,9 +675,6 @@ function clearManualAverage(quarter) {
     renderEditor();
 }
 
-// ================================================================
-//  FINAL EXAM
-// ================================================================
 function setFinalExam() {
     if (!selectedSubjectId) { alert('Please select a subject first.'); return; }
     const score = document.getElementById('examScore')?.value;
@@ -719,28 +767,10 @@ function getGradeClass(grade) {
     return 'grade-' + (grade === 'N/A' ? 'grade-NA' : grade);
 }
 
-// ================================================================
-//  HELPERS
-// ================================================================
 function escapeHtml(str) {
     return String(str).replace(/[&<>"']/g, c => ({
         '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
     }[c]));
-}
-
-function handleListClick(e) {
-    const delBtn = e.target.closest('.delete-subject-btn');
-    if (delBtn) {
-        e.stopPropagation();
-        const id = parseInt(delBtn.dataset.deleteId);
-        if (confirm('Delete this subject?')) {
-            subjects = subjects.filter(s => s.id !== id);
-            saveData();
-        }
-        return;
-    }
-    const card = e.target.closest('.subject-card');
-    if (card) openEditor(parseInt(card.dataset.id));
 }
 
 // ================================================================
@@ -757,37 +787,8 @@ function initSubjectsPage() {
         return;
     }
 
-    // Clone the list and rebind
-    let list = document.getElementById('subjectsList');
-    if (list) {
-        const newList = list.cloneNode(true);
-        list.parentNode.replaceChild(newList, list);
-        newList.addEventListener('click', handleListClick);
-    }
-
-    // Clone the modal, then bind to the fresh tree
-    let modal = document.getElementById('editorModal');
-    if (modal) {
-        const newModal = modal.cloneNode(true);
-        modal.parentNode.replaceChild(newModal, modal);
-
-        newModal.addEventListener('click', function (e) {
-            if (e.target === this) closeEditor();
-        });
-
-        const closeBtn = newModal.querySelector('#closeModalBtn');
-        if (closeBtn) closeBtn.addEventListener('click', closeEditor);
-    }
-
     loadData();
     renderSubjectsList();
-}
-
-if (!window._subjectsKeydownAttached) {
-    document.addEventListener('keydown', function (e) {
-        if (e.key === 'Escape') closeEditor();
-    });
-    window._subjectsKeydownAttached = true;
 }
 
 document.addEventListener('pageLoaded', function (e) {
