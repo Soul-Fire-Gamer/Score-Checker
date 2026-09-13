@@ -28,7 +28,7 @@ function initUser() {
 }
 
 // ================================================================
-//  PERSISTENCE  (shares data with Dashboard)
+//  PERSISTENCE  (shares data with Dashboard via academicData_<user>)
 // ================================================================
 function getDataKey() { return STORAGE_KEYS.USER_DATA + currentUser; }
 
@@ -90,10 +90,10 @@ function renderSubjectsList() {
 
     if (subjects.length === 0) {
         container.innerHTML = '';
-        emptyState.style.display = 'block';
+        if (emptyState) emptyState.style.display = 'block';
         return;
     }
-    emptyState.style.display = 'none';
+    if (emptyState) emptyState.style.display = 'none';
 
     container.innerHTML = subjects.map(subject => {
         const gradeClass = getGradeClass(subject.grades.total);
@@ -147,13 +147,15 @@ function countAssignments(subject) {
 function openEditor(id) {
     selectedSubjectId = id;
     selectedPeriod = 'Q1';
-    document.getElementById('editorModal').classList.add('active');
+    const modal = document.getElementById('editorModal');
+    if (modal) modal.classList.add('active');
     document.body.style.overflow = 'hidden';
     renderEditor();
 }
 
 function closeEditor() {
-    document.getElementById('editorModal').classList.remove('active');
+    const modal = document.getElementById('editorModal');
+    if (modal) modal.classList.remove('active');
     document.body.style.overflow = '';
     selectedSubjectId = null;
     renderSubjectsList();
@@ -164,6 +166,7 @@ function closeEditor() {
 // ================================================================
 function renderEditor() {
     const container = document.getElementById('editorContainer');
+    if (!container) return;
     if (!selectedSubjectId) return;
     const subject = subjects.find(s => s.id === selectedSubjectId);
     if (!subject) return;
@@ -734,39 +737,82 @@ function escapeHtml(str) {
 }
 
 // ================================================================
-//  INIT
+//  EVENT HANDLERS
 // ================================================================
-document.addEventListener('DOMContentLoaded', function() {
-    if (!initUser()) return;
-
-    // Open editor on card click
-    document.getElementById('subjectsList').addEventListener('click', function(e) {
-        const delBtn = e.target.closest('.delete-subject-btn');
-        if (delBtn) {
-            e.stopPropagation();
-            const id = parseInt(delBtn.dataset.deleteId);
-            if (confirm('Delete this subject?')) {
-                subjects = subjects.filter(s => s.id !== id);
-                saveData();
-            }
-            return;
+function handleListClick(e) {
+    const delBtn = e.target.closest('.delete-subject-btn');
+    if (delBtn) {
+        e.stopPropagation();
+        const id = parseInt(delBtn.dataset.deleteId);
+        if (confirm('Delete this subject?')) {
+            subjects = subjects.filter(s => s.id !== id);
+            saveData();
         }
-        const card = e.target.closest('.subject-card');
-        if (card) openEditor(parseInt(card.dataset.id));
-    });
+        return;
+    }
+    const card = e.target.closest('.subject-card');
+    if (card) openEditor(parseInt(card.dataset.id));
+}
 
-    // Close modal
-    document.getElementById('closeModalBtn').addEventListener('click', closeEditor);
-    document.getElementById('editorModal').addEventListener('click', function(e) {
-        if (e.target === this) closeEditor();
-    });
-    document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape') closeEditor();
-    });
+// ================================================================
+//  INIT  (works both standalone and inside app.js router)
+// ================================================================
+function initSubjectsPage() {
+    currentUser = localStorage.getItem(STORAGE_KEYS.SESSION);
+    if (!currentUser) {
+        // Standalone case: no session, kick back to login
+        if (!document.getElementById('pageContainer')) {
+            alert('Please log in first.');
+            window.location.href = 'login.html';
+        }
+        return;
+    }
+
+    // Elements are recreated each time app.js swaps the page, so re-attach
+    const list = document.getElementById('subjectsList');
+    const closeBtn = document.getElementById('closeModalBtn');
+    const modal = document.getElementById('editorModal');
+
+    if (list) list.addEventListener('click', handleListClick);
+    if (closeBtn) closeBtn.addEventListener('click', closeEditor);
+    if (modal) {
+        modal.addEventListener('click', function(e) {
+            if (e.target === this) closeEditor();
+        });
+    }
 
     loadData();
     renderSubjectsList();
+}
+
+// Document-level Escape handler — attach once
+if (!window._subjectsKeydownAttached) {
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') closeEditor();
+    });
+    window._subjectsKeydownAttached = true;
+}
+
+// ---- Primary trigger: app.js dispatches this every time it loads a page ----
+document.addEventListener('pageLoaded', function(e) {
+    if (e.detail && e.detail.page === 'subjects') {
+        initSubjectsPage();
+    }
 });
+
+// ---- Fallback: when opened standalone (subjects.html directly) ----
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function() {
+        // Only auto-init if we're NOT inside the app shell
+        if (!document.getElementById('pageContainer') && document.getElementById('subjectsList')) {
+            initSubjectsPage();
+        }
+    });
+} else {
+    if (!document.getElementById('pageContainer') && document.getElementById('subjectsList')) {
+        initSubjectsPage();
+    }
+}
 
 // Expose for cross-file use (optional)
 window.subjects = subjects;
