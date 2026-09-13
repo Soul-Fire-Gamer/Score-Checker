@@ -1,5 +1,5 @@
 // ================================================================
-//  CONFIG & STATE  (aligned with app.js / dashboard.js / login.js)
+//  CONFIG & STATE
 // ================================================================
 const STORAGE_KEYS = {
     USERS: 'academicTracker_users',
@@ -9,27 +9,22 @@ const STORAGE_KEYS = {
 
 const WEIGHTS = { EXAM: 0.30, Q1: 0.175, Q2: 0.175, Q3: 0.175, Q4: 0.175 };
 
-// NOTE: no top-level `currentUser` here — that name is already taken by app.js
 let subjects = [];
 let selectedSubjectId = null;
 let selectedPeriod = 'Q1';
 
-// ================================================================
-//  SESSION HELPER
-// ================================================================
 function getSessionUser() {
     return localStorage.getItem(STORAGE_KEYS.SESSION);
 }
 
 // ================================================================
-//  PERSISTENCE  (shares data with Dashboard via academicData_<user>)
+//  PERSISTENCE
 // ================================================================
 function getDataKey() {
     return STORAGE_KEYS.USER_DATA + getSessionUser();
 }
 
 function saveData() {
-    // Store as { subjects: [...] } — same shape Dashboard reads/writes
     localStorage.setItem(getDataKey(), JSON.stringify({ subjects: subjects }));
     renderSubjectsList();
 }
@@ -37,15 +32,10 @@ function saveData() {
 function loadData() {
     const stored = localStorage.getItem(getDataKey());
     const parsed = stored ? JSON.parse(stored) : null;
-    if (Array.isArray(parsed)) {
-        subjects = parsed;
-    } else if (parsed && Array.isArray(parsed.subjects)) {
-        subjects = parsed.subjects;
-    } else {
-        subjects = [];
-    }
+    if (Array.isArray(parsed)) subjects = parsed;
+    else if (parsed && Array.isArray(parsed.subjects)) subjects = parsed.subjects;
+    else subjects = [];
 
-    // Normalize every subject so older Dashboard-created ones are safe to edit
     subjects.forEach(subject => {
         if (!subject.quarters) {
             subject.quarters = {
@@ -77,7 +67,7 @@ function loadData() {
 }
 
 // ================================================================
-//  SUBJECT LIST  (main page)
+//  SUBJECT LIST
 // ================================================================
 function renderSubjectsList() {
     const container = document.getElementById('subjectsList');
@@ -158,7 +148,7 @@ function closeEditor() {
 }
 
 // ================================================================
-//  RENDER EDITOR  (inside the modal)
+//  RENDER EDITOR
 // ================================================================
 function renderEditor() {
     const container = document.getElementById('editorContainer');
@@ -241,7 +231,10 @@ function renderEditor() {
             <h3 style="margin-bottom:12px;">Current Final Exam</h3>
             ${examDisplay}`;
 
-        document.getElementById('saveExamBtn').addEventListener('click', setFinalExam);
+        // ✅ THE FIX: bind period tabs so Q1–Q4 / S1 / S2 / Total remain clickable
+        bindPeriodTabs();
+
+        document.getElementById('saveExamBtn')?.addEventListener('click', setFinalExam);
         const delExam = document.getElementById('deleteExamBtn');
         if (delExam) delExam.addEventListener('click', deleteFinalExam);
         document.getElementById('examScore')?.focus();
@@ -453,11 +446,14 @@ function renderEditor() {
 }
 
 // ================================================================
-//  EVENT BINDING  (editor)
+//  EVENT BINDING
 // ================================================================
 function bindPeriodTabs() {
-    document.querySelectorAll('.period-tab').forEach(tab => {
-        tab.addEventListener('click', function() {
+    document.querySelectorAll('#editorContainer .period-tab').forEach(tab => {
+        // Clone to prevent stacked listeners on re-render
+        const fresh = tab.cloneNode(true);
+        tab.parentNode.replaceChild(fresh, tab);
+        fresh.addEventListener('click', function () {
             selectedPeriod = this.dataset.period;
             renderEditor();
         });
@@ -467,16 +463,16 @@ function bindPeriodTabs() {
 function bindEditorEvents(quarterKey) {
     bindPeriodTabs();
 
-    document.querySelectorAll('.type-btn').forEach(btn => {
-        btn.addEventListener('click', function() {
-            document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('#editorContainer .type-btn').forEach(btn => {
+        btn.addEventListener('click', function () {
+            document.querySelectorAll('#editorContainer .type-btn').forEach(b => b.classList.remove('active'));
             this.classList.add('active');
             const type = this.dataset.type;
             document.getElementById(`assignmentType${type.charAt(0).toUpperCase() + type.slice(1)}`).checked = true;
         });
     });
 
-    document.getElementById('addAssignmentBtn').addEventListener('click', addAssignment);
+    document.getElementById('addAssignmentBtn')?.addEventListener('click', addAssignment);
 
     ['assignmentName', 'scoreObtained', 'scoreMax'].forEach(id => {
         document.getElementById(id)?.addEventListener('keypress', e => {
@@ -497,13 +493,13 @@ function bindEditorEvents(quarterKey) {
     const clearBtn = document.getElementById('clearManualBtn');
     if (clearBtn) clearBtn.addEventListener('click', () => clearManualAverage(quarterKey));
 
-    document.querySelectorAll('.edit-assignment-btn').forEach(btn => {
-        btn.addEventListener('click', function() {
+    document.querySelectorAll('#editorContainer .edit-assignment-btn').forEach(btn => {
+        btn.addEventListener('click', function () {
             editAssignment(this.dataset.quarter, this.dataset.type, parseInt(this.dataset.id));
         });
     });
-    document.querySelectorAll('.delete-assignment-btn').forEach(btn => {
-        btn.addEventListener('click', function() {
+    document.querySelectorAll('#editorContainer .delete-assignment-btn').forEach(btn => {
+        btn.addEventListener('click', function () {
             deleteAssignment(this.dataset.quarter, this.dataset.type, parseInt(this.dataset.id));
         });
     });
@@ -732,9 +728,6 @@ function escapeHtml(str) {
     }[c]));
 }
 
-// ================================================================
-//  EVENT HANDLERS
-// ================================================================
 function handleListClick(e) {
     const delBtn = e.target.closest('.delete-subject-btn');
     if (delBtn) {
@@ -751,7 +744,7 @@ function handleListClick(e) {
 }
 
 // ================================================================
-//  INIT  (works both standalone and inside app.js router)
+//  INIT
 // ================================================================
 function initSubjectsPage() {
     const sessionUser = getSessionUser();
@@ -764,7 +757,7 @@ function initSubjectsPage() {
         return;
     }
 
-    // ---- 1) Clone the subject LIST, then bind to the fresh node ----
+    // Clone the list and rebind
     let list = document.getElementById('subjectsList');
     if (list) {
         const newList = list.cloneNode(true);
@@ -772,19 +765,16 @@ function initSubjectsPage() {
         newList.addEventListener('click', handleListClick);
     }
 
-    // ---- 2) Clone the MODAL first (this wipes stale listeners), THEN ----
-    //         walk into the new tree and bind to the X button & backdrop.
+    // Clone the modal, then bind to the fresh tree
     let modal = document.getElementById('editorModal');
     if (modal) {
         const newModal = modal.cloneNode(true);
         modal.parentNode.replaceChild(newModal, modal);
 
-        // Click on the dark backdrop closes the modal
-        newModal.addEventListener('click', function(e) {
+        newModal.addEventListener('click', function (e) {
             if (e.target === this) closeEditor();
         });
 
-        // The X button lives inside the new modal, so bind it AFTER cloning
         const closeBtn = newModal.querySelector('#closeModalBtn');
         if (closeBtn) closeBtn.addEventListener('click', closeEditor);
     }
@@ -793,24 +783,21 @@ function initSubjectsPage() {
     renderSubjectsList();
 }
 
-// Document-level Escape handler — attach once
 if (!window._subjectsKeydownAttached) {
-    document.addEventListener('keydown', function(e) {
+    document.addEventListener('keydown', function (e) {
         if (e.key === 'Escape') closeEditor();
     });
     window._subjectsKeydownAttached = true;
 }
 
-// ---- Primary trigger: app.js dispatches this every time it loads a page ----
-document.addEventListener('pageLoaded', function(e) {
+document.addEventListener('pageLoaded', function (e) {
     if (e.detail && e.detail.page === 'subjects') {
         initSubjectsPage();
     }
 });
 
-// ---- Fallback: when opened standalone (subjects.html directly) ----
 if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function () {
         if (!document.getElementById('pageContainer') && document.getElementById('subjectsList')) {
             initSubjectsPage();
         }
