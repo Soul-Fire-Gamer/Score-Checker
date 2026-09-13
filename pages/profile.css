@@ -3,7 +3,7 @@
    ============================================================ */
 
 .profile-page {
-    max-width: 700px;
+    max-width: 720px;
     margin: 0 auto;
     padding: 10px 0;
 }
@@ -14,27 +14,92 @@
     margin-bottom: 24px;
     padding-bottom: 12px;
     border-bottom: 2px solid #e5e7eb;
+    display: flex;
+    align-items: center;
+    gap: 10px;
 }
+.profile-page h2 i { color: #4f46e5; }
 
 .profile-page h3 {
     color: #1e293b;
     font-size: 1.15rem;
-    margin-bottom: 12px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
 
 .profile-page .section-hint {
     color: #64748b;
     font-size: 0.9rem;
-    margin-bottom: 16px;
+    margin-bottom: 18px;
 }
 
-/* ----- Profile Picture ----- */
+.profile-page .profile-section {
+    margin-bottom: 28px;
+}
+
+/* ============================================================
+   BUTTONS  (matches the rest of the app)
+   ============================================================ */
+.profile-page .btn {
+    background: linear-gradient(135deg, #4f46e5, #7c3aed);
+    color: white;
+    border: none;
+    padding: 11px 20px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.95rem;
+    transition: transform 0.2s, box-shadow 0.2s;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-family: inherit;
+}
+.profile-page .btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(79, 70, 229, 0.3);
+}
+.profile-page .btn:active { transform: translateY(0); }
+
+.profile-page .btn-blue {
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+}
+.profile-page .btn-blue:hover {
+    box-shadow: 0 8px 20px rgba(59, 130, 246, 0.3);
+}
+
+.profile-page .btn-red {
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+}
+.profile-page .btn-red:hover {
+    box-shadow: 0 8px 20px rgba(239, 68, 68, 0.3);
+}
+
+.profile-page .btn-nuclear {
+    background: linear-gradient(135deg, #dc2626, #7f1d1d);
+}
+.profile-page .btn-nuclear:hover {
+    box-shadow: 0 8px 20px rgba(127, 29, 29, 0.35);
+}
+
+.profile-page .btn-small {
+    padding: 7px 14px;
+    font-size: 0.85rem;
+    border-radius: 20px;
+}
+
+/* ============================================================
+   PROFILE PICTURE
+   ============================================================ */
 .profile-pic-section {
     display: flex;
     flex-direction: column;
     align-items: center;
-    margin-bottom: 30px;
-    padding: 20px;
+    margin-bottom: 32px;
+    padding: 24px;
     background: #f8fafc;
     border-radius: 16px;
     border: 1px solid #e5e7eb;
@@ -48,7 +113,8 @@
     overflow: hidden;
     border: 4px solid #4f46e5;
     cursor: pointer;
-    margin-bottom: 12px;
+    margin-bottom: 14px;
+    background: #f1f5f9;
 }
 
 .profile-pic-wrapper img {
@@ -60,79 +126,65 @@
 
 .profile-pic-overlay {
     position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.5);
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0, 0, 0, 0.55);
     color: white;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     opacity: 0;
-    transition: opacity 0.3s ease;
+    transition: opacity 0.25s ease;
     cursor: pointer;
+    font-size: 0.8rem;
 }
-
-.profile-pic-wrapper:hover .profile-pic-overlay {
-    opacity: 1;
-}
-
+.profile-pic-wrapper:hover .profile-pic-overlay { opacity: 1; }
 .profile-pic-overlay i {
-    font-size: 1.8rem;
+    font-size: 1.6rem;
     margin-bottom: 4px;
 }
 
-.profile-pic-overlay span {
-    font-size: 0.8rem;
-}
-
-.profile-pic-section input[type="file"] {
-    display: none;
-}
+.profile-pic-section input[type="file"] { display: none; }
 
 .profile-pic-actions {
     display: flex;
     gap: 10px;
-    margin-top: 8px;
+    margin-top: 6px;
 }
 
-.profile-pic-actions .btn {
-    padding: 6px 14px;
-    font-size: 0.85rem;
-    border-radius: 20px;
-}
-
-/* ----- Profile Info ----- */
+/* ============================================================
+   PROFILE INFO
+   ============================================================ */
 .profile-info {
     background: #f8fafc;
-    border-radius: 12px;
-    padding: 16px 20px;
-    margin-bottom: 30px;
+    border-radius: 14px;
+    padding: 6px 22px;
+    margin-bottom: 32px;
     border: 1px solid #e5e7eb;
 }
 
 .info-row {
     display: flex;
     justify-content: space-between;
-    padding: 10px 0;
+    align-items: center;
+    padding: 14px 0;
     border-bottom: 1px solid #e5e7eb;
 }
-
-.info-row:last-child {
-    border-bottom: none;
-}
+.info-row:last-child { border-bottom: none; }
 
 .info-label {
     color: #64748b;
     font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 10px;
 }
-
 .info-label i {
-    width: 20px;
-    margin-right: 8px;
     color: #4f46e5;
+    font-size: 1rem;
+    width: 18px;
+    text-align: center;
 }
 
 .info-value {
@@ -140,24 +192,25 @@
     color: #1e293b;
 }
 
-/* ----- Password Form ----- */
+/* ============================================================
+   PASSWORD FORM
+   ============================================================ */
 .password-form {
     background: #f8fafc;
-    padding: 20px;
-    border-radius: 12px;
+    padding: 22px;
+    border-radius: 14px;
     border: 1px solid #e5e7eb;
 }
 
 .password-form .input-group {
     margin-bottom: 16px;
 }
-
 .password-form .input-group label {
     display: block;
     font-size: 0.9rem;
     font-weight: 500;
     color: #475569;
-    margin-bottom: 4px;
+    margin-bottom: 6px;
 }
 
 .password-input-wrapper {
@@ -168,14 +221,14 @@
 
 .password-input-wrapper input {
     width: 100%;
-    padding: 10px 44px 10px 14px;
+    padding: 12px 46px 12px 14px;
     border: 1px solid #cbd5e1;
-    border-radius: 8px;
+    border-radius: 10px;
     font-size: 1rem;
     background: white;
-    transition: border 0.2s;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    font-family: inherit;
 }
-
 .password-input-wrapper input:focus {
     outline: none;
     border-color: #4f46e5;
@@ -184,66 +237,86 @@
 
 .password-input-wrapper .toggle-password-btn {
     position: absolute;
-    right: 10px;
+    right: 12px;
     background: none;
     border: none;
     color: #94a3b8;
     cursor: pointer;
     font-size: 1.1rem;
-    padding: 4px;
+    padding: 6px;
+    border-radius: 6px;
+    transition: color 0.2s, background 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
-
 .password-input-wrapper .toggle-password-btn:hover {
     color: #4f46e5;
+    background: rgba(79, 70, 229, 0.08);
 }
 
 .password-form .btn {
     width: 100%;
-    justify-content: center;
+    margin-top: 4px;
 }
 
-/* ----- Password Strength ----- */
+/* ============================================================
+   PASSWORD STRENGTH
+   ============================================================ */
 #profilePasswordStrength {
     font-size: 0.85rem;
     margin-top: 6px;
     min-height: 20px;
+    font-weight: 500;
 }
-
-#profilePasswordStrength.weak { color: #ef4444; }
-#profilePasswordStrength.medium { color: #f59e0b; }
-#profilePasswordStrength.strong { color: #10b981; }
+#profilePasswordStrength.weak        { color: #ef4444; }
+#profilePasswordStrength.medium      { color: #f59e0b; }
+#profilePasswordStrength.strong      { color: #10b981; }
 #profilePasswordStrength.very-strong { color: #3b82f6; }
 
-/* ----- Danger Zone ----- */
-.danger-zone {
-    border: 2px solid #fecaca;
+/* ============================================================
+   DANGER ZONE
+   ============================================================ */
+.profile-section.danger-zone {
+    border: 1px solid #fecaca;
     background: #fef2f2;
+    border-radius: 14px;
+    padding: 22px;
+    margin-top: 32px;
 }
 
 .danger-zone h3 {
     color: #dc2626;
 }
+.danger-zone h3 i { color: #dc2626; }
+
+.danger-zone .section-hint {
+    color: #7f1d1d;
+    opacity: 0.75;
+    margin-bottom: 18px;
+}
 
 .danger-actions {
-    display: flex;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
     gap: 12px;
-    flex-wrap: wrap;
 }
-
+@media (max-width: 560px) {
+    .danger-actions { grid-template-columns: 1fr; }
+}
 .danger-actions .btn {
-    flex: 1;
-    min-width: 180px;
-    justify-content: center;
+    width: 100%;
 }
 
-/* ----- Messages ----- */
+/* ============================================================
+   MESSAGES
+   ============================================================ */
 .profile-page .error-msg {
     color: #ef4444;
     font-size: 0.9rem;
     margin-top: 12px;
     min-height: 20px;
 }
-
 .profile-page .success-msg {
     color: #10b981;
     font-size: 0.9rem;
@@ -251,42 +324,31 @@
     min-height: 20px;
 }
 
-/* ----- Responsive ----- */
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
 @media (max-width: 767px) {
-    .profile-page {
-        padding: 0;
-    }
-    
+    .profile-page { padding: 0; }
     .profile-pic-wrapper {
         width: 100px;
         height: 100px;
     }
-    
     .info-row {
         flex-direction: column;
+        align-items: flex-start;
         gap: 4px;
-    }
-    
-    .danger-actions {
-        flex-direction: column;
-    }
-    
-    .danger-actions .btn {
-        min-width: auto;
     }
 }
 
 @media (max-width: 480px) {
     .profile-pic-wrapper {
-        width: 80px;
-        height: 80px;
+        width: 84px;
+        height: 84px;
+        border-width: 3px;
     }
-    
-    .profile-pic-overlay i {
-        font-size: 1.2rem;
-    }
-    
-    .profile-pic-overlay span {
-        font-size: 0.7rem;
-    }
+    .profile-pic-overlay i { font-size: 1.2rem; }
+    .profile-pic-overlay span { font-size: 0.7rem; }
+    .profile-info { padding: 4px 16px; }
+    .password-form { padding: 16px; }
+    .profile-section.danger-zone { padding: 16px; }
 }
