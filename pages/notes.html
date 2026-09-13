@@ -1,0 +1,28 @@
+<div class="notes-page">
+
+    <div class="notes-header">
+        <h2><i class="fas fa-sticky-note"></i> My Notes</h2>
+        <div class="notes-meta">
+            <span id="notesCharCount">0 characters</span>
+            <span class="dot-sep">·</span>
+            <span id="notesSavedAt">Not saved yet</span>
+        </div>
+    </div>
+
+    <textarea
+        id="notesTextarea"
+        placeholder="Write your notes here…&#10;&#10;Tips:&#10;• Use Ctrl/Cmd + S to save&#10;• Your notes are saved per-user in this browser"
+        spellcheck="true"
+    ></textarea>
+
+    <div class="notes-actions">
+        <button class="btn btn-blue" id="saveNotesBtn">
+            <i class="fas fa-save"></i> Save Notes
+        </button>
+        <button class="btn btn-red" id="clearNotesBtn">
+            <i class="fas fa-trash"></i> Clear
+        </button>
+        <span class="notes-status" id="notesStatus"></span>
+    </div>
+
+</div>
