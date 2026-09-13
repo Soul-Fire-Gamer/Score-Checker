@@ -40,7 +40,7 @@
 }
 
 /* ============================================================
-   BUTTONS  (matches the rest of the app)
+   BUTTONS
    ============================================================ */
 .profile-page .btn {
     background: linear-gradient(135deg, #4f46e5, #7c3aed);
@@ -116,14 +116,12 @@
     margin-bottom: 14px;
     background: #f1f5f9;
 }
-
 .profile-pic-wrapper img {
     width: 100%;
     height: 100%;
     object-fit: cover;
     background: #f1f5f9;
 }
-
 .profile-pic-overlay {
     position: absolute;
     top: 0; left: 0;
@@ -140,12 +138,7 @@
     font-size: 0.8rem;
 }
 .profile-pic-wrapper:hover .profile-pic-overlay { opacity: 1; }
-.profile-pic-overlay i {
-    font-size: 1.6rem;
-    margin-bottom: 4px;
-}
-
-.profile-pic-section input[type="file"] { display: none; }
+.profile-pic-overlay i { font-size: 1.6rem; margin-bottom: 4px; }
 
 .profile-pic-actions {
     display: flex;
@@ -163,7 +156,6 @@
     margin-bottom: 32px;
     border: 1px solid #e5e7eb;
 }
-
 .info-row {
     display: flex;
     justify-content: space-between;
@@ -186,11 +178,7 @@
     width: 18px;
     text-align: center;
 }
-
-.info-value {
-    font-weight: 600;
-    color: #1e293b;
-}
+.info-value { font-weight: 600; color: #1e293b; }
 
 /* ============================================================
    PASSWORD FORM
@@ -201,10 +189,7 @@
     border-radius: 14px;
     border: 1px solid #e5e7eb;
 }
-
-.password-form .input-group {
-    margin-bottom: 16px;
-}
+.password-form .input-group { margin-bottom: 16px; }
 .password-form .input-group label {
     display: block;
     font-size: 0.9rem;
@@ -218,7 +203,6 @@
     display: flex;
     align-items: center;
 }
-
 .password-input-wrapper input {
     width: 100%;
     padding: 12px 46px 12px 14px;
@@ -234,7 +218,6 @@
     border-color: #4f46e5;
     box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
 }
-
 .password-input-wrapper .toggle-password-btn {
     position: absolute;
     right: 12px;
@@ -255,10 +238,7 @@
     background: rgba(79, 70, 229, 0.08);
 }
 
-.password-form .btn {
-    width: 100%;
-    margin-top: 4px;
-}
+.password-form .btn { width: 100%; margin-top: 4px; }
 
 /* ============================================================
    PASSWORD STRENGTH
@@ -275,6 +255,28 @@
 #profilePasswordStrength.very-strong { color: #3b82f6; }
 
 /* ============================================================
+   DATA MANAGEMENT
+   ============================================================ */
+.data-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+@media (max-width: 560px) {
+    .data-actions { grid-template-columns: 1fr; }
+}
+.data-actions .btn { width: 100%; }
+
+.data-status {
+    margin-top: 14px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    min-height: 22px;
+}
+.data-status.success { color: #10b981; }
+.data-status.error   { color: #ef4444; }
+
+/* ============================================================
    DANGER ZONE
    ============================================================ */
 .profile-section.danger-zone {
@@ -284,18 +286,13 @@
     padding: 22px;
     margin-top: 32px;
 }
-
-.danger-zone h3 {
-    color: #dc2626;
-}
+.danger-zone h3 { color: #dc2626; }
 .danger-zone h3 i { color: #dc2626; }
-
 .danger-zone .section-hint {
     color: #7f1d1d;
     opacity: 0.75;
     margin-bottom: 18px;
 }
-
 .danger-actions {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -304,9 +301,7 @@
 @media (max-width: 560px) {
     .danger-actions { grid-template-columns: 1fr; }
 }
-.danger-actions .btn {
-    width: 100%;
-}
+.danger-actions .btn { width: 100%; }
 
 /* ============================================================
    MESSAGES
@@ -329,17 +324,13 @@
    ============================================================ */
 @media (max-width: 767px) {
     .profile-page { padding: 0; }
-    .profile-pic-wrapper {
-        width: 100px;
-        height: 100px;
-    }
+    .profile-pic-wrapper { width: 100px; height: 100px; }
     .info-row {
         flex-direction: column;
         align-items: flex-start;
         gap: 4px;
     }
 }
-
 @media (max-width: 480px) {
     .profile-pic-wrapper {
         width: 84px;
