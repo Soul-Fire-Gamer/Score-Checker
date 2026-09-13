@@ -1,0 +1,156 @@
+/* =============================================================
+   INTERACTIVE TUTORIAL
+   ============================================================= */
+
+.tut-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.55);
+    z-index: 9998;
+    display: none;
+    pointer-events: none;
+    transition: opacity 0.2s;
+}
+.tut-overlay.active { display: block; }
+
+.tut-highlight {
+    position: fixed;
+    border-radius: 12px;
+    box-shadow:
+        0 0 0 4px #4f46e5,
+        0 0 0 12px rgba(79, 70, 229, 0.25),
+        0 0 60px rgba(79, 70, 229, 0.35);
+    z-index: 9999;
+    pointer-events: none;
+    display: none;
+    transition: left 0.3s ease, top 0.3s ease, width 0.3s ease, height 0.3s ease;
+    animation: tutPulse 2s ease-in-out infinite;
+}
+.tut-highlight.active { display: block; }
+@keyframes tutPulse {
+    0%, 100% { box-shadow: 0 0 0 4px #4f46e5, 0 0 0 12px rgba(79,70,229,0.25), 0 0 60px rgba(79,70,229,0.35); }
+    50%      { box-shadow: 0 0 0 6px #4f46e5, 0 0 0 16px rgba(79,70,229,0.35), 0 0 80px rgba(79,70,229,0.5); }
+}
+
+.tut-tooltip {
+    position: fixed;
+    background: white;
+    padding: 22px 24px 20px;
+    border-radius: 16px;
+    max-width: 420px;
+    width: calc(100vw - 40px);
+    z-index: 10000;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+    display: none;
+    animation: tutPop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+    border: 2px solid #4f46e5;
+}
+.tut-tooltip.active { display: block; }
+@keyframes tutPop {
+    from { opacity: 0; transform: scale(0.92) translateY(8px); }
+    to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.tut-tooltip .tt-arrow {
+    position: absolute;
+    width: 0;
+    height: 0;
+    border-left: 12px solid transparent;
+    border-right: 12px solid transparent;
+    border-top: 12px solid #4f46e5;
+    bottom: -12px;
+    left: 50%;
+    transform: translateX(-50%);
+}
+.tut-tooltip .tt-arrow.top {
+    top: -12px;
+    bottom: auto;
+    border-top: none;
+    border-bottom: 12px solid #4f46e5;
+}
+.tut-tooltip.centered .tt-arrow { display: none; }
+
+.tut-tooltip .tt-title {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 8px;
+}
+.tut-tooltip .tt-text {
+    color: #475569;
+    font-size: 0.95rem;
+    line-height: 1.55;
+}
+.tut-tooltip .tt-text strong { color: #4f46e5; }
+.tut-tooltip .tt-text em { color: #64748b; font-style: normal; }
+
+.tut-tooltip .tt-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+    justify-content: flex-end;
+}
+.tut-tooltip .tt-actions button {
+    padding: 9px 20px;
+    border: none;
+    border-radius: 30px;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-family: inherit;
+    transition: all 0.2s;
+}
+.tut-tooltip .tt-skip {
+    background: #e5e7eb;
+    color: #475569;
+}
+.tut-tooltip .tt-skip:hover { background: #d1d5db; }
+.tut-tooltip .tt-next {
+    background: #4f46e5;
+    color: white;
+}
+.tut-tooltip .tt-next:hover {
+    background: #4338ca;
+    transform: translateY(-1px);
+}
+.tut-tooltip .tt-next.done {
+    background: #10b981;
+}
+.tut-tooltip .tt-next.done:hover { background: #059669; }
+
+.tut-tooltip .tt-progress {
+    margin-top: 14px;
+    color: #94a3b8;
+    font-size: 0.82rem;
+    text-align: center;
+    letter-spacing: 0.3px;
+}
+
+/* Small "?" button injected into the app header */
+.tut-help-btn {
+    background: rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    color: white;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.95rem;
+    transition: all 0.2s;
+    margin-right: 8px;
+}
+.tut-help-btn:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: scale(1.08);
+}
+
+@media (max-width: 600px) {
+    .tut-tooltip {
+        max-width: calc(100vw - 24px);
+        padding: 18px;
+    }
+    .tut-tooltip .tt-title { font-size: 1.05rem; }
+}
