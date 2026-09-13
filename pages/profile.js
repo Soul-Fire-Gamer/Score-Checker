@@ -5,29 +5,25 @@
 let currentProfileUser = null;
 let profileData = null;
 
-/**
- * Initialize the profile page
- */
+function getDefaultAvatar() {
+    return window.DEFAULT_AVATAR || '';
+}
+
 function initProfilePage(user) {
     currentProfileUser = user;
     console.log('Profile page loaded for user:', user);
 
-    // Load user data
     loadProfileData();
-
-    // Setup password strength checker
     setupPasswordStrength();
 
-    // ---- Wire up buttons (replaces inline onclick) ----
+    // ---- Wire up buttons ----
     document.getElementById('profilePicWrapper')?.addEventListener('click', openPicPicker);
     document.getElementById('profilePicOverlay')?.addEventListener('click', openPicPicker);
     document.getElementById('uploadPicBtn')?.addEventListener('click', openPicPicker);
     document.getElementById('removePicBtn')?.addEventListener('click', removeProfilePic);
 
-    // The hidden file input: upload immediately when a file is chosen
     const picInput = document.getElementById('profilePicInput');
     if (picInput) {
-        // Clone to avoid stale listeners if this page is revisited
         const fresh = picInput.cloneNode(true);
         picInput.parentNode.replaceChild(fresh, picInput);
         fresh.addEventListener('change', uploadProfilePic);
@@ -37,7 +33,6 @@ function initProfilePage(user) {
     document.getElementById('deleteAccountBtn')?.addEventListener('click', deleteAccount);
     document.getElementById('clearAllDataBtn')?.addEventListener('click', clearAllData);
 
-    // ---- Data management ----
     document.getElementById('exportDataBtn')?.addEventListener('click', exportUserData);
     document.getElementById('importDataBtn')?.addEventListener('click', function () {
         document.getElementById('importDataInput')?.click();
@@ -49,7 +44,6 @@ function initProfilePage(user) {
         fresh.addEventListener('change', importUserData);
     }
 
-    // Toggle password visibility on any .toggle-password-btn
     document.querySelectorAll('.toggle-password-btn').forEach(btn => {
         const fresh = btn.cloneNode(true);
         btn.parentNode.replaceChild(fresh, btn);
@@ -59,7 +53,6 @@ function initProfilePage(user) {
         });
     });
 
-    // Enter key submits password form
     document.getElementById('profileNewPassword')?.addEventListener('keypress', function (e) {
         if (e.key === 'Enter') changePassword();
     });
@@ -68,17 +61,10 @@ function initProfilePage(user) {
     });
 }
 
-/**
- * Open the OS file picker for profile pictures
- */
 function openPicPicker() {
-    const input = document.getElementById('profilePicInput');
-    if (input) input.click();
+    document.getElementById('profilePicInput')?.click();
 }
 
-/**
- * Load user data from localStorage
- */
 function loadProfileData() {
     const data = window.loadUserData ? window.loadUserData() : null;
     profileData = data || { subjects: [] };
@@ -114,11 +100,16 @@ function loadProfileData() {
     if (subjEl) subjEl.textContent = totalSubjects;
     if (asgEl) asgEl.textContent = totalAssignments;
 
-    // Load profile picture
+    // Profile picture (falls back to default)
     const users = window.getUsers ? window.getUsers() : {};
     const userData = users[currentProfileUser] || {};
+    const src = userData.profilePic || getDefaultAvatar();
+
     const picEl = document.getElementById('profilePagePic');
-    if (picEl) picEl.src = userData.profilePic || '';
+    if (picEl) picEl.src = src;
+
+    // Also refresh the sidebar / header avatars now that we've read the record
+    if (window.applyProfilePictures) window.applyProfilePictures();
 
     if (sinceEl) {
         if (userData.created) {
@@ -131,14 +122,10 @@ function loadProfileData() {
     }
 }
 
-/**
- * Upload profile picture — called when the file input changes
- */
 function uploadProfilePic(event) {
     const file = event.target.files && event.target.files[0];
     if (!file) return;
 
-    // Basic validation
     if (!file.type.startsWith('image/')) {
         alert('Please select an image file.');
         event.target.value = '';
@@ -154,19 +141,16 @@ function uploadProfilePic(event) {
     reader.onload = function (e) {
         const base64 = e.target.result;
         const users = window.getUsers ? window.getUsers() : {};
-        if (!users[currentProfileUser]) {
-            users[currentProfileUser] = {};
-        }
+        if (!users[currentProfileUser]) users[currentProfileUser] = { username: currentProfileUser };
         users[currentProfileUser].profilePic = base64;
+
         if (window.saveUsers) window.saveUsers(users);
 
         const picEl = document.getElementById('profilePagePic');
         if (picEl) picEl.src = base64;
-        const sidebarPic = document.getElementById('sidebarProfilePic');
-        if (sidebarPic) sidebarPic.src = base64;
+        if (window.applyProfilePictures) window.applyProfilePictures();
 
         alert('✅ Profile picture updated!');
-        // Reset so choosing the same file again still triggers 'change'
         event.target.value = '';
     };
     reader.onerror = function () {
@@ -176,38 +160,36 @@ function uploadProfilePic(event) {
     reader.readAsDataURL(file);
 }
 
-/**
- * Remove profile picture
- */
 function removeProfilePic() {
-    if (!confirm('Remove your profile picture?')) return;
+    if (!confirm('Remove your profile picture and use the default avatar?')) return;
+
     const users = window.getUsers ? window.getUsers() : {};
-    if (users[currentProfileUser]) {
-        users[currentProfileUser].profilePic = '';
-        if (window.saveUsers) window.saveUsers(users);
-        const picEl = document.getElementById('profilePagePic');
-        if (picEl) picEl.src = '';
-        const sidebarPic = document.getElementById('sidebarProfilePic');
-        if (sidebarPic) sidebarPic.src = '';
-        alert('✅ Profile picture removed.');
+    if (!users[currentProfileUser]) {
+        users[currentProfileUser] = { username: currentProfileUser };
     }
+
+    users[currentProfileUser].profilePic = '';
+    if (window.saveUsers) window.saveUsers(users);
+
+    // Immediately show the default avatar everywhere
+    const src = getDefaultAvatar();
+    const picEl = document.getElementById('profilePagePic');
+    if (picEl) picEl.src = src;
+    if (window.applyProfilePictures) window.applyProfilePictures();
+
+    alert('✅ Profile picture removed — using default avatar.');
 }
 
 // ============================================================
 //  DATA EXPORT / IMPORT
 // ============================================================
 function exportUserData() {
-    if (!currentProfileUser) {
-        alert('No user session found.');
-        return;
-    }
+    if (!currentProfileUser) { alert('No user session found.'); return; }
 
     const dataKey = 'academicData_' + currentProfileUser;
-    const usersKey = 'academicTracker_users';
     const calendarKey = 'app_calendar_' + currentProfileUser;
     const tutorialKey = 'app_tutorial_' + currentProfileUser;
 
-    // Grab a copy of everything tied to this user
     const users = window.getUsers ? window.getUsers() : {};
     const userRecord = users[currentProfileUser] || {};
 
@@ -222,8 +204,7 @@ function exportUserData() {
             username: currentProfileUser,
             created: userRecord.created || null,
             profilePic: userRecord.profilePic || '',
-            notes: userRecord.notes || '',
-            // Do NOT export the hashed password by default
+            notes: userRecord.notes || ''
         },
         subjects: (() => {
             const raw = localStorage.getItem(dataKey);
@@ -233,9 +214,7 @@ function exportUserData() {
                 if (Array.isArray(parsed)) return parsed;
                 if (parsed && Array.isArray(parsed.subjects)) return parsed.subjects;
                 return [];
-            } catch (e) {
-                return [];
-            }
+            } catch (e) { return []; }
         })(),
         calendar: (() => {
             const raw = localStorage.getItem(calendarKey);
@@ -284,45 +263,28 @@ function importUserData(event) {
             return;
         }
 
-        const confirmMsg =
-            '⚠️ This will OVERWRITE your current subjects, notes, and calendar events.\n\n' +
-            'Continue with the import?';
-        if (!confirm(confirmMsg)) {
+        if (!confirm('⚠️ This will OVERWRITE your current subjects, notes, and calendar events.\n\nContinue with the import?')) {
             event.target.value = '';
             return;
         }
 
         try {
-            // 1) Subjects — always write under the CURRENT user's key
             const dataKey = 'academicData_' + currentProfileUser;
             const incomingSubjects = payload.subjects || (payload.data && payload.data.subjects) || [];
             localStorage.setItem(dataKey, JSON.stringify({ subjects: incomingSubjects }));
 
-            // 2) Notes & profile pic on the user record (do NOT touch password)
             const users = window.getUsers ? window.getUsers() : {};
-            if (!users[currentProfileUser]) users[currentProfileUser] = {};
+            if (!users[currentProfileUser]) users[currentProfileUser] = { username: currentProfileUser };
             if (payload.user) {
-                if (typeof payload.user.notes === 'string') {
-                    users[currentProfileUser].notes = payload.user.notes;
-                }
-                if (typeof payload.user.profilePic === 'string') {
-                    users[currentProfileUser].profilePic = payload.user.profilePic;
-                }
-                if (payload.user.created && !users[currentProfileUser].created) {
-                    users[currentProfileUser].created = payload.user.created;
-                }
+                if (typeof payload.user.notes === 'string') users[currentProfileUser].notes = payload.user.notes;
+                if (typeof payload.user.profilePic === 'string') users[currentProfileUser].profilePic = payload.user.profilePic;
+                if (payload.user.created && !users[currentProfileUser].created) users[currentProfileUser].created = payload.user.created;
             }
             if (window.saveUsers) window.saveUsers(users);
 
-            // 3) Calendar
             if (payload.calendar && typeof payload.calendar === 'object') {
-                localStorage.setItem(
-                    'app_calendar_' + currentProfileUser,
-                    JSON.stringify(payload.calendar)
-                );
+                localStorage.setItem('app_calendar_' + currentProfileUser, JSON.stringify(payload.calendar));
             }
-
-            // 4) Tutorial flag
             if (payload.tutorialSeen) {
                 localStorage.setItem('app_tutorial_' + currentProfileUser, 'true');
             }
@@ -333,7 +295,6 @@ function importUserData(event) {
             console.error(err);
             alert('❌ Import failed. Check the browser console for details.');
         }
-
         event.target.value = '';
     };
     reader.onerror = function () {
@@ -349,16 +310,13 @@ function setDataStatus(msg, type) {
     el.textContent = msg;
     el.className = 'data-status ' + (type || '');
     if (type === 'success') {
-        setTimeout(() => {
-            el.textContent = '';
-            el.className = 'data-status';
-        }, 4000);
+        setTimeout(() => { el.textContent = ''; el.className = 'data-status'; }, 4000);
     }
 }
 
-/**
- * Setup password strength checker
- */
+// ============================================================
+//  PASSWORD
+// ============================================================
 function setupPasswordStrength() {
     const passwordInput = document.getElementById('profileNewPassword');
     const strengthEl = document.getElementById('profilePasswordStrength');
@@ -389,9 +347,6 @@ function setupPasswordStrength() {
     });
 }
 
-/**
- * Toggle password visibility
- */
 function toggleProfilePassword(inputId, button) {
     const input = document.getElementById(inputId);
     if (!input) return;
@@ -407,9 +362,6 @@ function toggleProfilePassword(inputId, button) {
     }
 }
 
-/**
- * Change password
- */
 function changePassword() {
     const current = document.getElementById('profileCurrentPassword').value;
     const newPass = document.getElementById('profileNewPassword').value;
@@ -440,14 +392,18 @@ function changePassword() {
         return;
     }
 
+    // The field is `passwordHash` (written by login.js), NOT `password`.
+    const storedHash = user.passwordHash || user.password;
+
     if (window.hashPassword) {
         window.hashPassword(current).then(function (hashed) {
-            if (hashed !== user.password) {
+            if (hashed !== storedHash) {
                 errorEl.textContent = 'Current password is incorrect.';
                 return;
             }
             window.hashPassword(newPass).then(function (newHashed) {
-                user.password = newHashed;
+                user.passwordHash = newHashed;
+                delete user.password; // remove any legacy field
                 if (window.saveUsers) window.saveUsers(users);
                 successEl.textContent = '✅ Password updated successfully!';
                 document.getElementById('profileCurrentPassword').value = '';
@@ -457,11 +413,13 @@ function changePassword() {
             });
         });
     } else {
-        if (btoa(current) !== user.password) {
+        // Fallback for legacy btoa-based hash
+        if (btoa(current) !== storedHash) {
             errorEl.textContent = 'Current password is incorrect.';
             return;
         }
-        user.password = btoa(newPass);
+        user.passwordHash = btoa(newPass);
+        delete user.password;
         if (window.saveUsers) window.saveUsers(users);
         successEl.textContent = '✅ Password updated successfully!';
         document.getElementById('profileCurrentPassword').value = '';
@@ -471,9 +429,9 @@ function changePassword() {
     }
 }
 
-/**
- * Delete account
- */
+// ============================================================
+//  DANGER ZONE
+// ============================================================
 function deleteAccount() {
     if (!confirm('⚠️ Are you sure you want to permanently delete your account "' + currentProfileUser + '" and all of your data? This action cannot be undone!')) return;
     if (!confirm('⚠️ This is your final warning. Click "OK" to permanently delete your account.')) {
@@ -481,8 +439,7 @@ function deleteAccount() {
         return;
     }
 
-    const dataKey = 'academicData_' + currentProfileUser;
-    localStorage.removeItem(dataKey);
+    localStorage.removeItem('academicData_' + currentProfileUser);
     localStorage.removeItem('app_calendar_' + currentProfileUser);
     localStorage.removeItem('app_tutorial_' + currentProfileUser);
 
@@ -493,18 +450,13 @@ function deleteAccount() {
     }
 
     localStorage.removeItem('currentUser');
-
     alert('✅ Account "' + currentProfileUser + '" has been permanently deleted.');
     window.location.href = 'login.html';
 }
 
-/**
- * Clear all data (nuclear option)
- */
 function clearAllData() {
     if (!confirm('⚠️ NUCLEAR OPTION: This will erase ALL data for ALL users. This cannot be undone!')) return;
     if (!confirm('⚠️ FINAL WARNING: All data will be permanently deleted. Continue?')) return;
-
     localStorage.clear();
     alert('✅ All data has been permanently cleared.');
     window.location.href = 'login.html';
@@ -519,9 +471,6 @@ document.addEventListener('pageLoaded', function (e) {
     }
 });
 
-// ============================================================
-//  EXPOSE FOR INLINE USE IF NEEDED
-// ============================================================
 window.initProfilePage = initProfilePage;
 window.uploadProfilePic = uploadProfilePic;
 window.removeProfilePic = removeProfilePic;
