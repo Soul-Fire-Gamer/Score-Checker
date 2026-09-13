@@ -720,7 +720,7 @@ function getGrade(percentage) {
 }
 
 function getGradeClass(grade) {
-    return 'grade-' + (grade === 'N/A' ? 'N\\/A' : grade);
+    return 'grade-' + (grade === 'N/A' ? 'grade-NA' : grade);
 }
 
 // ================================================================
@@ -756,7 +756,6 @@ function handleListClick(e) {
 function initSubjectsPage() {
     const sessionUser = getSessionUser();
     if (!sessionUser) {
-        // Standalone case: no session, kick back to login
         if (!document.getElementById('pageContainer')) {
             alert('Please log in first.');
             window.location.href = 'login.html';
@@ -765,31 +764,29 @@ function initSubjectsPage() {
         return;
     }
 
-    // Elements are recreated each time app.js swaps the page, so re-attach.
-    // To avoid stacking duplicate listeners on repeated navigation, we
-    // swap the list element with a fresh clone before attaching.
+    // ---- 1) Clone the subject LIST, then bind to the fresh node ----
     let list = document.getElementById('subjectsList');
     if (list) {
-        const clone = list.cloneNode(true);
-        list.parentNode.replaceChild(clone, list);
-        clone.addEventListener('click', handleListClick);
+        const newList = list.cloneNode(true);
+        list.parentNode.replaceChild(newList, list);
+        newList.addEventListener('click', handleListClick);
     }
 
-    const closeBtn = document.getElementById('closeModalBtn');
-    if (closeBtn) {
-        // Same trick for the close button
-        const cloneBtn = closeBtn.cloneNode(true);
-        closeBtn.parentNode.replaceChild(cloneBtn, closeBtn);
-        cloneBtn.addEventListener('click', closeEditor);
-    }
-
-    const modal = document.getElementById('editorModal');
+    // ---- 2) Clone the MODAL first (this wipes stale listeners), THEN ----
+    //         walk into the new tree and bind to the X button & backdrop.
+    let modal = document.getElementById('editorModal');
     if (modal) {
-        const cloneModal = modal.cloneNode(true);
-        modal.parentNode.replaceChild(cloneModal, modal);
-        cloneModal.addEventListener('click', function(e) {
+        const newModal = modal.cloneNode(true);
+        modal.parentNode.replaceChild(newModal, modal);
+
+        // Click on the dark backdrop closes the modal
+        newModal.addEventListener('click', function(e) {
             if (e.target === this) closeEditor();
         });
+
+        // The X button lives inside the new modal, so bind it AFTER cloning
+        const closeBtn = newModal.querySelector('#closeModalBtn');
+        if (closeBtn) closeBtn.addEventListener('click', closeEditor);
     }
 
     loadData();
@@ -814,7 +811,6 @@ document.addEventListener('pageLoaded', function(e) {
 // ---- Fallback: when opened standalone (subjects.html directly) ----
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', function() {
-        // Only auto-init if we're NOT inside the app shell
         if (!document.getElementById('pageContainer') && document.getElementById('subjectsList')) {
             initSubjectsPage();
         }
