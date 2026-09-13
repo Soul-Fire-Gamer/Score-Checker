@@ -1,0 +1,39 @@
+<div class="calendar-page">
+
+    <!-- Header: month + navigation -->
+    <div class="calendar-header">
+        <button class="nav-btn" id="prevMonthBtn" aria-label="Previous month">
+            <i class="fas fa-chevron-left"></i>
+        </button>
+        <h2 id="calendarMonthYear">Month Year</h2>
+        <button class="nav-btn" id="nextMonthBtn" aria-label="Next month">
+            <i class="fas fa-chevron-right"></i>
+        </button>
+    </div>
+
+    <!-- Weekday row + day grid -->
+    <div class="calendar-grid" id="calendarGrid"></div>
+
+    <!-- Selected day panel -->
+    <div class="event-list-container">
+        <h3 id="selectedDateDisplay">📅 Deadlines for today</h3>
+        <div id="eventList"></div>
+
+        <!-- Add event form -->
+        <div class="add-event-form">
+            <div class="form-label">
+                <i class="fas fa-plus-circle"></i>
+                Add Deadline for <span id="selectedDateFormDisplay">today</span>
+            </div>
+            <div class="form-row">
+                <input type="text" id="newEventTitle" placeholder="Deadline title..." />
+                <input type="time" id="newEventTime" />
+            </div>
+            <input type="text" id="newEventDesc" placeholder="Description (optional)" class="full-width-input" />
+            <button class="add-event-btn" id="addEventBtn">
+                <i class="fas fa-plus"></i> Add Deadline
+            </button>
+        </div>
+    </div>
+
+</div>
