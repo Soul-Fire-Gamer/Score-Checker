@@ -4,27 +4,27 @@
 <div class="profile-page">
     <div class="profile-container">
         <h2><i class="fas fa-user-circle"></i> My Profile</h2>
-        
+
         <!-- Profile Picture -->
         <div class="profile-pic-section">
-            <div class="profile-pic-wrapper">
+            <div class="profile-pic-wrapper" id="profilePicWrapper">
                 <img id="profilePagePic" src="" alt="Profile Picture" />
-                <div class="profile-pic-overlay" onclick="document.getElementById('profilePicInput').click()">
+                <div class="profile-pic-overlay" id="profilePicOverlay">
                     <i class="fas fa-camera"></i>
                     <span>Change Photo</span>
                 </div>
             </div>
-            <input type="file" id="profilePicInput" accept="image/*" />
+            <input type="file" id="profilePicInput" accept="image/*" hidden />
             <div class="profile-pic-actions">
-                <button class="btn btn-small" onclick="uploadProfilePic()">
+                <button class="btn btn-small" id="uploadPicBtn">
                     <i class="fas fa-upload"></i> Upload
                 </button>
-                <button class="btn btn-small btn-red" onclick="removeProfilePic()">
+                <button class="btn btn-small btn-red" id="removePicBtn">
                     <i class="fas fa-trash"></i> Remove
                 </button>
             </div>
         </div>
-        
+
         <!-- User Info -->
         <div class="profile-info">
             <div class="info-row">
@@ -48,69 +48,83 @@
                 <span class="info-value" id="profileTotalAssignments">0</span>
             </div>
         </div>
-        
+
         <!-- Change Password -->
         <div class="profile-section">
             <h3><i class="fas fa-key"></i> Change Password</h3>
             <p class="section-hint">Use a strong, unique password for better security.</p>
-            
+
             <div class="password-form">
                 <div class="input-group">
                     <label for="profileCurrentPassword">Current Password</label>
                     <div class="password-input-wrapper">
                         <input type="password" id="profileCurrentPassword" placeholder="Enter current password" autocomplete="current-password" />
-                        <button type="button" class="toggle-password-btn" onclick="toggleProfilePassword('profileCurrentPassword', this)">
+                        <button type="button" class="toggle-password-btn" data-target="profileCurrentPassword">
                             <i class="fas fa-eye"></i>
                         </button>
                     </div>
                 </div>
-                
+
                 <div class="input-group">
                     <label for="profileNewPassword">New Password</label>
                     <div class="password-input-wrapper">
                         <input type="password" id="profileNewPassword" placeholder="Enter new password" autocomplete="new-password" />
-                        <button type="button" class="toggle-password-btn" onclick="toggleProfilePassword('profileNewPassword', this)">
+                        <button type="button" class="toggle-password-btn" data-target="profileNewPassword">
                             <i class="fas fa-eye"></i>
                         </button>
                     </div>
                     <div id="profilePasswordStrength" class="password-strength"></div>
                 </div>
-                
+
                 <div class="input-group">
                     <label for="profileConfirmPassword">Confirm New Password</label>
                     <div class="password-input-wrapper">
                         <input type="password" id="profileConfirmPassword" placeholder="Confirm new password" autocomplete="new-password" />
-                        <button type="button" class="toggle-password-btn" onclick="toggleProfilePassword('profileConfirmPassword', this)">
+                        <button type="button" class="toggle-password-btn" data-target="profileConfirmPassword">
                             <i class="fas fa-eye"></i>
                         </button>
                     </div>
                 </div>
-                
-                <button class="btn btn-blue" onclick="changePassword()">
+
+                <button class="btn btn-blue" id="changePasswordBtn">
                     <i class="fas fa-save"></i> Update Password
                 </button>
-                
+
                 <div id="profilePasswordError" class="error-msg"></div>
                 <div id="profilePasswordSuccess" class="success-msg"></div>
             </div>
         </div>
-        
+
+        <!-- ============ DATA MANAGEMENT ============ -->
+        <div class="profile-section">
+            <h3><i class="fas fa-database"></i> Data Management</h3>
+            <p class="section-hint">Back up your tracker data to a file, or restore it from a previous export.</p>
+
+            <div class="data-actions">
+                <button class="btn btn-blue" id="exportDataBtn">
+                    <i class="fas fa-download"></i> Download Data (JSON)
+                </button>
+                <button class="btn" id="importDataBtn">
+                    <i class="fas fa-upload"></i> Upload Data (JSON)
+                </button>
+                <input type="file" id="importDataInput" accept=".json,application/json" hidden />
+            </div>
+            <div id="dataStatus" class="data-status"></div>
+        </div>
+
         <!-- Danger Zone -->
         <div class="profile-section danger-zone">
             <h3><i class="fas fa-exclamation-triangle"></i> Danger Zone</h3>
             <p class="section-hint">Once you delete your account, there is no going back. All your data will be permanently removed.</p>
-            
+
             <div class="danger-actions">
-                <button class="btn btn-red" onclick="deleteAccount()">
+                <button class="btn btn-red" id="deleteAccountBtn">
                     <i class="fas fa-trash"></i> Delete Account
                 </button>
-                <button class="btn btn-red" onclick="clearAllData()" style="background: linear-gradient(135deg,#dc2626,#7f1d1d);">
+                <button class="btn btn-nuclear" id="clearAllDataBtn">
                     <i class="fas fa-bomb"></i> Clear All Data (Nuclear)
                 </button>
             </div>
-            
-            <div id="profileDeleteError" class="error-msg"></div>
-            <div id="profileDeleteSuccess" class="success-msg"></div>
         </div>
     </div>
 </div>
