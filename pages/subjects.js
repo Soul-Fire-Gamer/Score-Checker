@@ -1,5 +1,5 @@
 // ================================================================
-//  CONFIG
+//  CONFIG & STATE
 // ================================================================
 const STORAGE_KEYS = {
     USERS: 'app_users',
@@ -9,9 +9,6 @@ const STORAGE_KEYS = {
 
 const WEIGHTS = { EXAM: 0.30, Q1: 0.175, Q2: 0.175, Q3: 0.175, Q4: 0.175 };
 
-// ================================================================
-//  STATE
-// ================================================================
 let currentUser = null;
 let subjects = [];
 let selectedSubjectId = null;
@@ -28,14 +25,7 @@ function initUser() {
         window.location.href = 'login.html';
         return false;
     }
-    document.getElementById('userDisplay').textContent = currentUser;
     return true;
-}
-
-function logout() {
-    if (!confirm('Log out?')) return;
-    localStorage.removeItem(STORAGE_KEYS.SESSION);
-    window.location.href = 'login.html';
 }
 
 // ================================================================
@@ -45,13 +35,14 @@ function getDataKey() { return STORAGE_KEYS.USER_DATA + currentUser; }
 
 function saveData() {
     localStorage.setItem(getDataKey(), JSON.stringify(subjects));
-    renderSubjects();
     updateDashboardTotals();
+    renderSubjects();
 }
 
 function loadData() {
     const stored = localStorage.getItem(getDataKey());
     subjects = stored ? JSON.parse(stored) : [];
+    
     subjects.forEach(subject => {
         if (!subject.quarters) {
             subject.quarters = {
@@ -68,6 +59,7 @@ function loadData() {
             subject.grades = { q1: 'N/A', q2: 'N/A', q3: 'N/A', q4: 'N/A', semester1: 'N/A', semester2: 'N/A', total: 'N/A' };
         }
         if (subject.finalExam === undefined) subject.finalExam = null;
+        
         calculateSubjectAverages(subject);
         calculateWeightedTotal(subject);
     });
@@ -160,7 +152,22 @@ function countAssignments(subject) {
 }
 
 function updateDashboardTotals() {
-    // Placeholder — the main dashboard handles its own totals.
+    const withScores = subjects.filter(s => s.averages.total > 0);
+    if (withScores.length === 0) {
+        document.getElementById('totalAverage').textContent = '0.0%';
+        document.getElementById('semester1Avg').textContent = '0.0%';
+        document.getElementById('semester2Avg').textContent = '0.0%';
+        document.getElementById('totalSubjects').textContent = subjects.length;
+        return;
+    }
+    const total = withScores.reduce((sum, s) => sum + s.averages.total, 0) / withScores.length;
+    const sem1 = withScores.reduce((sum, s) => sum + s.averages.semester1, 0) / withScores.length;
+    const sem2 = withScores.reduce((sum, s) => sum + s.averages.semester2, 0) / withScores.length;
+
+    document.getElementById('totalAverage').textContent = total.toFixed(1) + '%';
+    document.getElementById('semester1Avg').textContent = sem1.toFixed(1) + '%';
+    document.getElementById('semester2Avg').textContent = sem2.toFixed(1) + '%';
+    document.getElementById('totalSubjects').textContent = subjects.length;
 }
 
 // ================================================================
@@ -470,7 +477,6 @@ function bindPeriodTabs() {
 function bindQuarterEvents(quarterKey) {
     bindPeriodTabs();
 
-    // Type toggle
     document.querySelectorAll('.type-btn').forEach(btn => {
         btn.addEventListener('click', function() {
             document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('active'));
@@ -480,17 +486,14 @@ function bindQuarterEvents(quarterKey) {
         });
     });
 
-    // Add assignment
     document.getElementById('addAssignmentBtn').addEventListener('click', addAssignment);
 
-    // Enter key support
     ['assignmentName', 'scoreObtained', 'scoreMax'].forEach(id => {
         document.getElementById(id)?.addEventListener('keypress', e => {
             if (e.key === 'Enter') addAssignment();
         });
     });
 
-    // Manual average
     const setBtn = document.getElementById('setManualBtn');
     if (setBtn) {
         setBtn.addEventListener('click', () => {
@@ -504,7 +507,6 @@ function bindQuarterEvents(quarterKey) {
     const clearBtn = document.getElementById('clearManualBtn');
     if (clearBtn) clearBtn.addEventListener('click', () => clearManualAverage(quarterKey));
 
-    // Edit / delete assignment
     document.querySelectorAll('.edit-assignment-btn').forEach(btn => {
         btn.addEventListener('click', function() {
             editAssignment(this.dataset.quarter, this.dataset.type, parseInt(this.dataset.id));
@@ -586,7 +588,6 @@ function editAssignment(quarter, type, assignmentId) {
         : subject.quarters[quarter].major.find(a => a.id === assignmentId);
     if (!assignment) return;
 
-    // Use simple prompts for a compact edit UX
     const newName = prompt('Assignment name:', assignment.name);
     if (newName === null) return;
     const newScore = prompt('Score obtained:', assignment.score);
@@ -748,13 +749,11 @@ function escapeHtml(str) {
 document.addEventListener('DOMContentLoaded', function() {
     if (!initUser()) return;
 
-    document.getElementById('logoutBtn').addEventListener('click', logout);
     document.getElementById('addSubjectBtn').addEventListener('click', addSubject);
     document.getElementById('subjectInput').addEventListener('keypress', e => {
         if (e.key === 'Enter') addSubject();
     });
 
-    // Delegated clicks for subject list
     document.getElementById('subjectsList').addEventListener('click', function(e) {
         const delBtn = e.target.closest('.delete-subject-btn');
         if (delBtn) {
@@ -767,6 +766,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     loadData();
+    updateDashboardTotals();
     renderSubjects();
     renderSubjectDetail();
 });
