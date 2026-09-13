@@ -1,7 +1,7 @@
 // =============================================================
-//  DASHBOARD PAGE  —  READ-ONLY
-//  Stats + subject list + full subject detail view.
-//  All editing is done on the Subjects page.
+//  DASHBOARD PAGE
+//  - Add Subject: allowed here
+//  - Everything else: read-only (edit on Subjects page)
 // =============================================================
 (function () {
 
@@ -34,7 +34,6 @@
         else if (parsed && Array.isArray(parsed.subjects)) subs = parsed.subjects;
         else subs = [];
 
-        // Normalize structure (read-only — we never save back)
         subs.forEach(s => {
             if (!s.quarters) {
                 s.quarters = {
@@ -60,8 +59,12 @@
         return subs;
     }
 
+    function saveUserSubjects(subs) {
+        localStorage.setItem(getDataKey(), JSON.stringify({ subjects: subs }));
+    }
+
     // ============================================================
-    //  CALCULATIONS  (identical to subjects.js so numbers match)
+    //  CALCULATIONS
     // ============================================================
     function calculateAverage(assignments) {
         if (!assignments || assignments.length === 0) return 0;
@@ -122,7 +125,7 @@
     }
 
     // ============================================================
-    //  STATS  (top cards)
+    //  STATS
     // ============================================================
     function updateStats() {
         let totalAvg = 0, sem1Avg = 0, sem2Avg = 0;
@@ -138,21 +141,26 @@
         sem1Avg = sem1Count ? (sem1Avg / sem1Count) : 0;
         sem2Avg = sem2Count ? (sem2Avg / sem2Count) : 0;
 
-        document.getElementById('totalAverage').textContent = totalAvg.toFixed(1) + '%';
-        document.getElementById('semester1Avg').textContent = sem1Avg.toFixed(1) + '%';
-        document.getElementById('semester2Avg').textContent = sem2Avg.toFixed(1) + '%';
-        document.getElementById('totalSubjects').textContent = subjects.length;
+        const totalEl = document.getElementById('totalAverage');
+        const s1El = document.getElementById('semester1Avg');
+        const s2El = document.getElementById('semester2Avg');
+        const countEl = document.getElementById('totalSubjects');
+
+        if (totalEl) totalEl.textContent = totalAvg.toFixed(1) + '%';
+        if (s1El) s1El.textContent = sem1Avg.toFixed(1) + '%';
+        if (s2El) s2El.textContent = sem2Avg.toFixed(1) + '%';
+        if (countEl) countEl.textContent = subjects.length;
     }
 
     // ============================================================
-    //  SUBJECT LIST  (left sidebar, read-only — click to view)
+    //  SUBJECT LIST
     // ============================================================
     function renderSubjectsList() {
         const container = document.getElementById('subjectsList');
         if (!container) return;
 
         if (subjects.length === 0) {
-            container.innerHTML = '<div class="empty-state">No subjects yet. Add one on the Subjects page.</div>';
+            container.innerHTML = '<div class="empty-state">No subjects yet</div>';
             return;
         }
 
@@ -175,7 +183,7 @@
     }
 
     // ============================================================
-    //  SUBJECT DETAIL  (right main panel, read-only)
+    //  SUBJECT DETAIL  (read-only)
     // ============================================================
     function renderDetail() {
         const container = document.getElementById('subjectDetail');
@@ -210,7 +218,7 @@
                 <i class="fas fa-book"></i> ${escapeHtml(subject.name)}
             </h2>`;
 
-        // ---------- FINAL EXAM TAB ----------
+        // ---------- FINAL EXAM ----------
         if (isExam) {
             const exam = subject.finalExam;
             const hasExam = exam !== null;
@@ -249,7 +257,7 @@
             return;
         }
 
-        // ---------- QUARTER TAB ----------
+        // ---------- QUARTER ----------
         if (isQuarter) {
             const allAssignments = [
                 ...subject.quarters[quarterKey].minor.map(a => ({ ...a, type: 'minor' })),
@@ -384,7 +392,55 @@
     }
 
     // ============================================================
-    //  EVENT BINDING  (only period tabs + subject selection)
+    //  ACTIONS
+    // ============================================================
+    function addSubject() {
+        const input = document.getElementById('subjectInput');
+        if (!input) return;
+
+        const name = input.value.trim();
+        if (!name) {
+            alert('Please enter a subject name');
+            input.focus();
+            return;
+        }
+
+        // Prevent duplicates within this user's list
+        if (subjects.some(s => s.name.toLowerCase() === name.toLowerCase())) {
+            alert('You already have a subject with that name.');
+            input.focus();
+            return;
+        }
+
+        const newSubject = {
+            id: Date.now(),
+            name: name,
+            quarters: {
+                q1: { minor: [], major: [], manualAverage: null },
+                q2: { minor: [], major: [], manualAverage: null },
+                q3: { minor: [], major: [], manualAverage: null },
+                q4: { minor: [], major: [], manualAverage: null }
+            },
+            averages: { q1: 0, q2: 0, q3: 0, q4: 0, semester1: 0, semester2: 0, total: 0 },
+            grades: { q1: 'N/A', q2: 'N/A', q3: 'N/A', q4: 'N/A', semester1: 'N/A', semester2: 'N/A', total: 'N/A' },
+            finalExam: null
+        };
+
+        subjects.push(newSubject);
+        saveUserSubjects(subjects);
+
+        // Auto-select the new subject so its (empty) detail view opens
+        selectedSubjectId = newSubject.id;
+        selectedPeriod = 'Q1';
+
+        input.value = '';
+        updateStats();
+        renderSubjectsList();
+        renderDetail();
+    }
+
+    // ============================================================
+    //  EVENT BINDING  (only tab switching + subject selection)
     // ============================================================
     function bindPeriodTabs() {
         document.querySelectorAll('#subjectDetail .period-tab').forEach(tab => {
@@ -410,7 +466,23 @@
         renderSubjectsList();
         renderDetail();
 
-        // Subject list: click to view (no editing)
+        // ---- Add Subject form ----
+        const addBtn = document.getElementById('addSubjectBtn');
+        if (addBtn) {
+            const fresh = addBtn.cloneNode(true);
+            addBtn.parentNode.replaceChild(fresh, addBtn);
+            fresh.addEventListener('click', addSubject);
+        }
+        const input = document.getElementById('subjectInput');
+        if (input) {
+            const fresh = input.cloneNode(true);
+            input.parentNode.replaceChild(fresh, input);
+            fresh.addEventListener('keypress', function (e) {
+                if (e.key === 'Enter') addSubject();
+            });
+        }
+
+        // ---- Subject list: click to select ----
         const list = document.getElementById('subjectsList');
         if (list) {
             const fresh = list.cloneNode(true);
@@ -427,14 +499,12 @@
         }
     }
 
-    // Trigger on every page load dispatched by app.js
     document.addEventListener('pageLoaded', function (e) {
         if (e.detail && e.detail.page === 'dashboard') {
             initDashboard();
         }
     });
 
-    // Fallback for standalone use
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', function () {
             if (!document.getElementById('pageContainer') && document.getElementById('subjectsList')) {
