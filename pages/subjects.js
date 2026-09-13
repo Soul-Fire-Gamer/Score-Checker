@@ -1,10 +1,10 @@
 // ================================================================
-//  CONFIG & STATE
+//  CONFIG & STATE  (aligned with app.js / dashboard.js / login.js)
 // ================================================================
 const STORAGE_KEYS = {
-    USERS: 'app_users',
-    USER_DATA: 'app_data_',
-    SESSION: 'app_session'
+    USERS: 'academicTracker_users',
+    USER_DATA: 'academicData_',
+    SESSION: 'currentUser'
 };
 
 const WEIGHTS = { EXAM: 0.30, Q1: 0.175, Q2: 0.175, Q3: 0.175, Q4: 0.175 };
@@ -13,7 +13,6 @@ let currentUser = null;
 let subjects = [];
 let selectedSubjectId = null;
 let selectedPeriod = 'Q1';
-let editingAssignment = null;
 
 // ================================================================
 //  AUTH GUARD
@@ -29,20 +28,28 @@ function initUser() {
 }
 
 // ================================================================
-//  PERSISTENCE (Shared with Dashboard)
+//  PERSISTENCE  (shares data with Dashboard)
 // ================================================================
 function getDataKey() { return STORAGE_KEYS.USER_DATA + currentUser; }
 
 function saveData() {
-    // Saves to the exact same localStorage key the Dashboard reads from
-    localStorage.setItem(getDataKey(), JSON.stringify(subjects));
-    renderSubjects();
+    // Store as { subjects: [...] } — same shape Dashboard reads/writes
+    localStorage.setItem(getDataKey(), JSON.stringify({ subjects: subjects }));
+    renderSubjectsList();
 }
 
 function loadData() {
     const stored = localStorage.getItem(getDataKey());
-    subjects = stored ? JSON.parse(stored) : [];
-    
+    const parsed = stored ? JSON.parse(stored) : null;
+    if (Array.isArray(parsed)) {
+        subjects = parsed;
+    } else if (parsed && Array.isArray(parsed.subjects)) {
+        subjects = parsed.subjects;
+    } else {
+        subjects = [];
+    }
+
+    // Normalize every subject so older Dashboard-created ones are safe to edit
     subjects.forEach(subject => {
         if (!subject.quarters) {
             subject.quarters = {
@@ -51,6 +58,15 @@ function loadData() {
                 q3: { minor: [], major: [], manualAverage: null },
                 q4: { minor: [], major: [], manualAverage: null }
             };
+        } else {
+            ['q1', 'q2', 'q3', 'q4'].forEach(q => {
+                if (!subject.quarters[q]) {
+                    subject.quarters[q] = { minor: [], major: [], manualAverage: null };
+                }
+                if (subject.quarters[q].manualAverage === undefined) subject.quarters[q].manualAverage = null;
+                if (!Array.isArray(subject.quarters[q].minor)) subject.quarters[q].minor = [];
+                if (!Array.isArray(subject.quarters[q].major)) subject.quarters[q].major = [];
+            });
         }
         if (!subject.averages) {
             subject.averages = { q1: 0, q2: 0, q3: 0, q4: 0, semester1: 0, semester2: 0, total: 0 };
@@ -59,92 +75,62 @@ function loadData() {
             subject.grades = { q1: 'N/A', q2: 'N/A', q3: 'N/A', q4: 'N/A', semester1: 'N/A', semester2: 'N/A', total: 'N/A' };
         }
         if (subject.finalExam === undefined) subject.finalExam = null;
-        
         calculateSubjectAverages(subject);
         calculateWeightedTotal(subject);
     });
 }
 
 // ================================================================
-//  SUBJECT CRUD
+//  SUBJECT LIST  (main page)
 // ================================================================
-function addSubject() {
-    const input = document.getElementById('subjectInput');
-    const name = input.value.trim();
-    if (!name) { alert('Please enter a subject name'); return; }
-
-    const newSubject = {
-        id: Date.now(),
-        name,
-        quarters: {
-            q1: { minor: [], major: [], manualAverage: null },
-            q2: { minor: [], major: [], manualAverage: null },
-            q3: { minor: [], major: [], manualAverage: null },
-            q4: { minor: [], major: [], manualAverage: null }
-        },
-        averages: { q1: 0, q2: 0, q3: 0, q4: 0, semester1: 0, semester2: 0, total: 0 },
-        grades: { q1: 'N/A', q2: 'N/A', q3: 'N/A', q4: 'N/A', semester1: 'N/A', semester2: 'N/A', total: 'N/A' },
-        finalExam: null
-    };
-    
-    subjects.push(newSubject);
-    saveData();
-    input.value = '';
-    
-    // Auto-select the newly created subject
-    selectSubject(newSubject.id);
-}
-
-function selectSubject(id) {
-    selectedSubjectId = id;
-    selectedPeriod = 'Q1';
-    editingAssignment = null;
-    renderSubjects();
-    renderSubjectDetail();
-}
-
-function deleteSubject(id) {
-    if (!confirm('Delete this subject?')) return;
-    subjects = subjects.filter(s => s.id !== id);
-    if (selectedSubjectId === id) { selectedSubjectId = null; editingAssignment = null; }
-    saveData();
-    renderSubjectDetail();
-}
-
-function selectPeriod(period) {
-    selectedPeriod = period;
-    editingAssignment = null;
-    renderSubjectDetail();
-}
-
-// ================================================================
-//  RENDER SUBJECT LIST
-// ================================================================
-function renderSubjects() {
+function renderSubjectsList() {
     const container = document.getElementById('subjectsList');
+    const emptyState = document.getElementById('emptyState');
+    if (!container) return;
+
     if (subjects.length === 0) {
-        container.innerHTML = `<div class="empty-state"><i class="fas fa-book"></i><p>No subjects yet</p></div>`;
+        container.innerHTML = '';
+        emptyState.style.display = 'block';
         return;
     }
+    emptyState.style.display = 'none';
+
     container.innerHTML = subjects.map(subject => {
-        const isActive = subject.id === selectedSubjectId;
         const gradeClass = getGradeClass(subject.grades.total);
         const hasExam = subject.finalExam !== null;
+        const examDisplay = hasExam
+            ? `📝 Final: ${subject.finalExam.percentage}%`
+            : '📝 Final: Not set';
+        const count = countAssignments(subject);
+
         return `
-            <div class="subject-card ${isActive ? 'active' : ''}" data-id="${subject.id}">
-                <div class="subject-name">
-                    <span>${escapeHtml(subject.name)}</span>
-                    <span>
-                        <span class="grade-badge ${gradeClass}">${subject.grades.total}</span>
-                        <span style="margin-left:8px;font-weight:600;color:#4f46e5;">${subject.averages.total.toFixed(1)}%</span>
-                    </span>
+            <div class="subject-card" data-id="${subject.id}">
+                <div class="subject-card-top">
+                    <div class="subject-info">
+                        <div class="subject-name">${escapeHtml(subject.name)}</div>
+                        <div class="subject-meta">${count} assignment${count !== 1 ? 's' : ''}</div>
+                    </div>
+                    <div class="subject-final-status">${examDisplay}</div>
+                    <div class="subject-right">
+                        <div class="subject-grade-row">
+                            <span class="grade-badge ${gradeClass}">${subject.grades.total}</span>
+                            <span class="subject-percent">${subject.averages.total.toFixed(1)}%</span>
+                        </div>
+                        <button class="delete-subject-btn" data-delete-id="${subject.id}">
+                            <i class="fas fa-trash"></i> Delete
+                        </button>
+                    </div>
                 </div>
-                <div class="subject-meta">
-                    <span>${countAssignments(subject)} assignments</span>
-                    <span>${hasExam ? '📝 Final Exam ✓' : ''}</span>
-                    <button class="btn btn-red btn-xs delete-subject-btn" data-id="${subject.id}">
-                        <i class="fas fa-trash"></i>
-                    </button>
+                <div class="subject-quarters">
+                    <span>Q1: ${subject.averages.q1.toFixed(1)}%</span>
+                    <span>|</span>
+                    <span>Q2: ${subject.averages.q2.toFixed(1)}%</span>
+                    <span>|</span>
+                    <span>Q3: ${subject.averages.q3.toFixed(1)}%</span>
+                    <span>|</span>
+                    <span>Q4: ${subject.averages.q4.toFixed(1)}%</span>
+                    <span>|</span>
+                    <span>${examDisplay}</span>
                 </div>
             </div>`;
     }).join('');
@@ -156,19 +142,29 @@ function countAssignments(subject) {
 }
 
 // ================================================================
-//  RENDER SUBJECT DETAIL (EDITOR)
+//  OPEN / CLOSE EDITOR MODAL
 // ================================================================
-function renderSubjectDetail() {
-    const container = document.getElementById('subjectDetail');
-    if (!selectedSubjectId) {
-        container.innerHTML = `
-            <div class="empty-state">
-                <i class="fas fa-hand-pointer"></i>
-                <h2>Select a Subject to Edit</h2>
-                <p>Choose a subject from the left to manage its quarters, assignments, and final exam.</p>
-            </div>`;
-        return;
-    }
+function openEditor(id) {
+    selectedSubjectId = id;
+    selectedPeriod = 'Q1';
+    document.getElementById('editorModal').classList.add('active');
+    document.body.style.overflow = 'hidden';
+    renderEditor();
+}
+
+function closeEditor() {
+    document.getElementById('editorModal').classList.remove('active');
+    document.body.style.overflow = '';
+    selectedSubjectId = null;
+    renderSubjectsList();
+}
+
+// ================================================================
+//  RENDER EDITOR  (inside the modal)
+// ================================================================
+function renderEditor() {
+    const container = document.getElementById('editorContainer');
+    if (!selectedSubjectId) return;
     const subject = subjects.find(s => s.id === selectedSubjectId);
     if (!subject) return;
 
@@ -182,6 +178,12 @@ function renderSubjectDetail() {
         const val = p === '📝 Final Exam' ? 'Final Exam' : p;
         return `<div class="period-tab ${active}" data-period="${val}">${p}</div>`;
     }).join('');
+
+    const subjectHeader = `
+        <h2 style="margin-bottom:20px; color:#1e293b; display:flex; align-items:center; gap:10px;">
+            <i class="fas fa-book" style="color:#4f46e5;"></i>
+            ${escapeHtml(subject.name)}
+        </h2>`;
 
     // ---------- FINAL EXAM TAB ----------
     if (isExam) {
@@ -207,6 +209,7 @@ function renderSubjectDetail() {
                </div>`;
 
         container.innerHTML = `
+            ${subjectHeader}
             <div class="summary-grid">
                 <div class="summary-card">
                     <div class="value">${hasExam ? exam.percentage + '%' : 'N/A'}</div>
@@ -236,7 +239,7 @@ function renderSubjectDetail() {
                     <i class="fas fa-save"></i> ${hasExam ? 'Update' : 'Add'} Final Exam
                 </button>
             </div>
-            <h3>Current Final Exam</h3>
+            <h3 style="margin-bottom:12px;">Current Final Exam</h3>
             ${examDisplay}`;
 
         document.getElementById('saveExamBtn').addEventListener('click', setFinalExam);
@@ -295,6 +298,7 @@ function renderSubjectDetail() {
         const manualActive = subject.quarters[quarterKey].manualAverage !== null;
 
         container.innerHTML = `
+            ${subjectHeader}
             <div class="summary-grid">
                 <div class="summary-card">
                     <div class="value">${subject.averages[quarterKey].toFixed(1)}%</div>
@@ -373,7 +377,7 @@ function renderSubjectDetail() {
                 <span class="avg-display">📈 Avg: <strong>${avgDisplay}%</strong></span>
             </div>
 
-            <h3>${selectedPeriod} Assignments</h3>
+            <h3 style="margin-bottom:12px;">${selectedPeriod} Assignments</h3>
             <div class="table-wrap">
                 <table class="scores-table">
                     <thead>
@@ -383,7 +387,7 @@ function renderSubjectDetail() {
                 </table>
             </div>`;
 
-        bindQuarterEvents(quarterKey);
+        bindEditorEvents(quarterKey);
         return;
     }
 
@@ -404,6 +408,7 @@ function renderSubjectDetail() {
         const examDisplay = subject.finalExam ? `${subject.finalExam.percentage}%` : 'N/A';
 
         container.innerHTML = `
+            ${subjectHeader}
             <div class="summary-grid">
                 <div class="summary-card">
                     <div class="value">${avgValue.toFixed(1)}%</div>
@@ -445,21 +450,22 @@ function renderSubjectDetail() {
         return;
     }
 
-    container.innerHTML = `<div class="empty-state"><p>Select a valid period.</p></div>`;
+    container.innerHTML = `${subjectHeader}<div class="empty-state"><p>Select a valid period.</p></div>`;
 }
 
 // ================================================================
-//  EVENT BINDING
+//  EVENT BINDING  (editor)
 // ================================================================
 function bindPeriodTabs() {
     document.querySelectorAll('.period-tab').forEach(tab => {
         tab.addEventListener('click', function() {
-            selectPeriod(this.dataset.period);
+            selectedPeriod = this.dataset.period;
+            renderEditor();
         });
     });
 }
 
-function bindQuarterEvents(quarterKey) {
+function bindEditorEvents(quarterKey) {
     bindPeriodTabs();
 
     document.querySelectorAll('.type-btn').forEach(btn => {
@@ -544,7 +550,7 @@ function addAssignment() {
     calculateSubjectAverages(subject);
     calculateWeightedTotal(subject);
     saveData();
-    renderSubjectDetail();
+    renderEditor();
 }
 
 function deleteAssignment(quarter, type, assignmentId) {
@@ -557,12 +563,11 @@ function deleteAssignment(quarter, type, assignmentId) {
     } else {
         subject.quarters[quarter].major = subject.quarters[quarter].major.filter(a => a.id !== assignmentId);
     }
-    if (editingAssignment && editingAssignment.assignmentId === assignmentId) editingAssignment = null;
 
     calculateSubjectAverages(subject);
     calculateWeightedTotal(subject);
     saveData();
-    renderSubjectDetail();
+    renderEditor();
 }
 
 function editAssignment(quarter, type, assignmentId) {
@@ -592,7 +597,7 @@ function editAssignment(quarter, type, assignmentId) {
     calculateSubjectAverages(subject);
     calculateWeightedTotal(subject);
     saveData();
-    renderSubjectDetail();
+    renderEditor();
 }
 
 // ================================================================
@@ -609,7 +614,7 @@ function setManualAverage(quarter, average) {
     calculateSubjectAverages(subject);
     calculateWeightedTotal(subject);
     saveData();
-    renderSubjectDetail();
+    renderEditor();
 }
 
 function clearManualAverage(quarter) {
@@ -621,7 +626,7 @@ function clearManualAverage(quarter) {
     calculateSubjectAverages(subject);
     calculateWeightedTotal(subject);
     saveData();
-    renderSubjectDetail();
+    renderEditor();
 }
 
 // ================================================================
@@ -650,7 +655,7 @@ function setFinalExam() {
 
     calculateWeightedTotal(subject);
     saveData();
-    renderSubjectDetail();
+    renderEditor();
 }
 
 function deleteFinalExam() {
@@ -660,7 +665,7 @@ function deleteFinalExam() {
     subject.finalExam = null;
     calculateWeightedTotal(subject);
     saveData();
-    renderSubjectDetail();
+    renderEditor();
 }
 
 // ================================================================
@@ -669,7 +674,7 @@ function deleteFinalExam() {
 function calculateSubjectAverages(subject) {
     ['q1', 'q2', 'q3', 'q4'].forEach(q => {
         const qd = subject.quarters[q];
-        if (qd.manualAverage !== null) {
+        if (qd.manualAverage !== null && qd.manualAverage !== undefined) {
             subject.averages[q] = qd.manualAverage;
         } else {
             const minorAvg = calculateAverage(qd.minor);
@@ -734,23 +739,35 @@ function escapeHtml(str) {
 document.addEventListener('DOMContentLoaded', function() {
     if (!initUser()) return;
 
-    document.getElementById('addSubjectBtn').addEventListener('click', addSubject);
-    document.getElementById('subjectInput').addEventListener('keypress', e => {
-        if (e.key === 'Enter') addSubject();
-    });
-
+    // Open editor on card click
     document.getElementById('subjectsList').addEventListener('click', function(e) {
         const delBtn = e.target.closest('.delete-subject-btn');
         if (delBtn) {
             e.stopPropagation();
-            deleteSubject(parseInt(delBtn.dataset.id));
+            const id = parseInt(delBtn.dataset.deleteId);
+            if (confirm('Delete this subject?')) {
+                subjects = subjects.filter(s => s.id !== id);
+                saveData();
+            }
             return;
         }
         const card = e.target.closest('.subject-card');
-        if (card) selectSubject(parseInt(card.dataset.id));
+        if (card) openEditor(parseInt(card.dataset.id));
+    });
+
+    // Close modal
+    document.getElementById('closeModalBtn').addEventListener('click', closeEditor);
+    document.getElementById('editorModal').addEventListener('click', function(e) {
+        if (e.target === this) closeEditor();
+    });
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') closeEditor();
     });
 
     loadData();
-    renderSubjects();
-    renderSubjectDetail();
+    renderSubjectsList();
 });
+
+// Expose for cross-file use (optional)
+window.subjects = subjects;
+window.renderSubjectsList = renderSubjectsList;
