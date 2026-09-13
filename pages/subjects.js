@@ -9,28 +9,24 @@ const STORAGE_KEYS = {
 
 const WEIGHTS = { EXAM: 0.30, Q1: 0.175, Q2: 0.175, Q3: 0.175, Q4: 0.175 };
 
-let currentUser = null;
+// NOTE: no top-level `currentUser` here — that name is already taken by app.js
 let subjects = [];
 let selectedSubjectId = null;
 let selectedPeriod = 'Q1';
 
 // ================================================================
-//  AUTH GUARD
+//  SESSION HELPER
 // ================================================================
-function initUser() {
-    currentUser = localStorage.getItem(STORAGE_KEYS.SESSION);
-    if (!currentUser) {
-        alert('Please log in first.');
-        window.location.href = 'login.html';
-        return false;
-    }
-    return true;
+function getSessionUser() {
+    return localStorage.getItem(STORAGE_KEYS.SESSION);
 }
 
 // ================================================================
 //  PERSISTENCE  (shares data with Dashboard via academicData_<user>)
 // ================================================================
-function getDataKey() { return STORAGE_KEYS.USER_DATA + currentUser; }
+function getDataKey() {
+    return STORAGE_KEYS.USER_DATA + getSessionUser();
+}
 
 function saveData() {
     // Store as { subjects: [...] } — same shape Dashboard reads/writes
@@ -758,25 +754,40 @@ function handleListClick(e) {
 //  INIT  (works both standalone and inside app.js router)
 // ================================================================
 function initSubjectsPage() {
-    currentUser = localStorage.getItem(STORAGE_KEYS.SESSION);
-    if (!currentUser) {
+    const sessionUser = getSessionUser();
+    if (!sessionUser) {
         // Standalone case: no session, kick back to login
         if (!document.getElementById('pageContainer')) {
             alert('Please log in first.');
             window.location.href = 'login.html';
+            return;
         }
         return;
     }
 
-    // Elements are recreated each time app.js swaps the page, so re-attach
-    const list = document.getElementById('subjectsList');
-    const closeBtn = document.getElementById('closeModalBtn');
-    const modal = document.getElementById('editorModal');
+    // Elements are recreated each time app.js swaps the page, so re-attach.
+    // To avoid stacking duplicate listeners on repeated navigation, we
+    // swap the list element with a fresh clone before attaching.
+    let list = document.getElementById('subjectsList');
+    if (list) {
+        const clone = list.cloneNode(true);
+        list.parentNode.replaceChild(clone, list);
+        clone.addEventListener('click', handleListClick);
+    }
 
-    if (list) list.addEventListener('click', handleListClick);
-    if (closeBtn) closeBtn.addEventListener('click', closeEditor);
+    const closeBtn = document.getElementById('closeModalBtn');
+    if (closeBtn) {
+        // Same trick for the close button
+        const cloneBtn = closeBtn.cloneNode(true);
+        closeBtn.parentNode.replaceChild(cloneBtn, closeBtn);
+        cloneBtn.addEventListener('click', closeEditor);
+    }
+
+    const modal = document.getElementById('editorModal');
     if (modal) {
-        modal.addEventListener('click', function(e) {
+        const cloneModal = modal.cloneNode(true);
+        modal.parentNode.replaceChild(cloneModal, modal);
+        cloneModal.addEventListener('click', function(e) {
             if (e.target === this) closeEditor();
         });
     }
@@ -813,7 +824,3 @@ if (document.readyState === 'loading') {
         initSubjectsPage();
     }
 }
-
-// Expose for cross-file use (optional)
-window.subjects = subjects;
-window.renderSubjectsList = renderSubjectsList;
