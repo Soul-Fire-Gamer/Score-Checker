@@ -6,11 +6,20 @@
 //  - Info steps just show a tooltip with a Next button.
 //  - Arrow position AND direction are set inline by JS so the
 //    tooltip always points at the target, regardless of CSS cache.
+//  - Auto-starts the first time a new account logs in.
 // =============================================================
 (function () {
 
     // -------------------------------------------------------------
     //  STEP DEFINITIONS
+    //    type          'info' | 'action'
+    //    target        CSS selector (or fn) to highlight
+    //    waitForClick  CSS selector (or fn) to watch for clicks
+    //    prefill       fn to auto-fill inputs before the user clicks
+    //    captureBefore fn returning a snapshot of pre-click state
+    //    verify        fn (before) -> bool | Promise<bool>
+    //    verifyError   message shown if verify() fails
+    //    hint          prompt text under the body
     // -------------------------------------------------------------
     const STEPS = [
         {
@@ -26,6 +35,7 @@
             id: 'stats',
             page: 'dashboard',
             type: 'info',
+            target: '.dashboard-page .stats-grid',
             title: '📊 Live Stats',
             text: 'These four cards summarise your whole academic record: <strong>Total Average</strong>, <strong>Semester 1</strong>, <strong>Semester 2</strong>, and <strong>Subject count</strong>. They update automatically as you enter scores.'
         },
@@ -479,7 +489,7 @@
         const tooltip = document.getElementById('tutTooltip');
         if (!arrow || !tooltip) return;
 
-        // Base geometry (set every time so nothing depends on CSS state)
+        // Base geometry (set every time so nothing depends on CSS)
         arrow.style.position = 'absolute';
         arrow.style.width = '0';
         arrow.style.height = '0';
@@ -487,13 +497,15 @@
         arrow.style.borderRight = '12px solid transparent';
 
         if (dir === 'top') {
-            // Tooltip is BELOW the target → arrow at top edge, pointing UP
+            // Tooltip is BELOW the target → arrow sits on the tooltip's
+            // TOP edge and points UP toward the target.
             arrow.style.top = '-14px';
             arrow.style.bottom = 'auto';
             arrow.style.borderTop = 'none';
             arrow.style.borderBottom = '12px solid #4f46e5';
         } else {
-            // Tooltip is ABOVE the target → arrow at bottom edge, pointing DOWN
+            // Tooltip is ABOVE the target → arrow sits on the tooltip's
+            // BOTTOM edge and points DOWN toward the target.
             arrow.style.top = 'auto';
             arrow.style.bottom = '-14px';
             arrow.style.borderTop = '12px solid #4f46e5';
@@ -502,7 +514,7 @@
 
         // Horizontal: aim the arrow at the target's viewport centre
         const tRect = tooltip.getBoundingClientRect();
-        const arrowHalf = 12;       // half the width of the triangle
+        const arrowHalf = 12;       // half the triangle's width
         const borderW = 2;          // tooltip border thickness
         let arrowLeft = targetCenterX - tRect.left - borderW - arrowHalf;
 
@@ -786,7 +798,7 @@
     });
 
     // -------------------------------------------------------------
-    //  INIT
+    //  INIT  (auto-start for new accounts)
     // -------------------------------------------------------------
     function boot() {
         currentTutUser = localStorage.getItem('currentUser');
@@ -795,14 +807,35 @@
         ensureDom();
 
         const seenKey = 'tutorial_seen_' + currentTutUser;
-        if (!localStorage.getItem(seenKey)) {
-            setTimeout(() => {
-                const main = document.getElementById('mainApp');
-                if (main && main.style.display !== 'none') {
-                    start(false);
-                }
-            }, 900);
+        const alreadySeen = localStorage.getItem(seenKey);
+
+        if (alreadySeen) {
+            console.log('[tutorial] User has already seen the tour. Use the "?" button to replay.');
+            return;
         }
+
+        console.log('[tutorial] New user detected — queuing tutorial for', currentTutUser);
+
+        // Poll for up to 6 seconds for the app shell to be actually visible.
+        // `offsetParent !== null` is the reliable "is this on-screen" check.
+        let attempts = 0;
+        const MAX_ATTEMPTS = 30;   // 30 * 200ms = 6s
+
+        const poll = setInterval(() => {
+            attempts++;
+            const main = document.getElementById('mainApp');
+            const isVisible = main && main.offsetParent !== null;
+
+            if (isVisible) {
+                clearInterval(poll);
+                console.log('[tutorial] App shell visible — starting tour.');
+                // Small extra delay so the dashboard finishes its own render
+                setTimeout(() => start(false), 400);
+            } else if (attempts >= MAX_ATTEMPTS) {
+                clearInterval(poll);
+                console.warn('[tutorial] Timed out waiting for app shell; not starting.');
+            }
+        }, 200);
     }
 
     if (document.readyState === 'loading') {
