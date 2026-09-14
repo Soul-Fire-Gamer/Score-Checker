@@ -4,7 +4,9 @@
 //    the user clicks it AND the expected DOM change actually
 //    happened. Otherwise an inline error is shown.
 //  - Info steps just show a tooltip with a Next button.
-//  - Arrow position AND direction are set inline by JS.
+//  - Arrow position, direction, and visibility are set inline
+//    by JS so the tooltip never shows a stray arrow when it's
+//    centred (i.e. when there's no target to point at).
 //  - Auto-starts for brand-new accounts. Flag lives on the user
 //    record so deleting an account resets it automatically.
 // =============================================================
@@ -290,14 +292,11 @@
     let repositionPending = false;
 
     // -------------------------------------------------------------
-    //  TUTORIAL-SEEN FLAG  (stored on the user record)
-    //  Deleting the account wipes the flag automatically, so
-    //  re-registering the same username fires the tour again.
+    //  TUTORIAL-SEEN FLAG
     // -------------------------------------------------------------
     function hasSeenTutorial(username) {
         if (!username) return false;
         if (!window.getUsers) {
-            // Fallback if app.js hasn't loaded: use a namespaced localStorage key
             return localStorage.getItem('tutorial_seen_' + username) === 'true';
         }
         const users = window.getUsers();
@@ -319,7 +318,6 @@
 
     function clearTutorialFlag(username) {
         if (!username) return;
-        // Clear on the user record...
         if (window.getUsers && window.saveUsers) {
             const users = window.getUsers();
             if (users[username]) {
@@ -327,7 +325,6 @@
                 window.saveUsers(users);
             }
         }
-        // ...and clear any stale legacy key from earlier versions
         localStorage.removeItem('tutorial_seen_' + username);
     }
 
@@ -374,7 +371,7 @@
     function resolveClick(step) { return resolveSelector(step.waitForClick); }
 
     // -------------------------------------------------------------
-    //  DOM  (injected once)
+    //  DOM
     // -------------------------------------------------------------
     function ensureDom() {
         if (domReady) return;
@@ -473,6 +470,8 @@
         if (h) { h.classList.remove('active'); h.style.display = 'none'; }
         const t = document.getElementById('tutTooltip');
         if (t) { t.classList.remove('active', 'centered'); }
+        const a = document.getElementById('ttArrow');
+        if (a) a.style.display = 'none';
         detachClickWatcher();
     }
 
@@ -517,10 +516,18 @@
     // -------------------------------------------------------------
     //  ARROW  (all inline)
     // -------------------------------------------------------------
+    function hideArrow() {
+        const arrow = document.getElementById('ttArrow');
+        if (arrow) arrow.style.display = 'none';
+    }
+
     function positionArrow(targetCenterX, dir) {
         const arrow = document.getElementById('ttArrow');
         const tooltip = document.getElementById('tutTooltip');
         if (!arrow || !tooltip) return;
+
+        // Show the arrow (it may have been hidden by a previous centered step)
+        arrow.style.display = 'block';
 
         arrow.style.position = 'absolute';
         arrow.style.width = '0';
@@ -568,7 +575,9 @@
         highlight.style.display = 'none';
         hideMasks();
 
+        // ---- Centered tooltip (no target to point at) ----
         if (!targetEl) {
+            hideArrow();                       // ← the fix
             overlay.classList.add('active');
             tooltip.style.left = '50%';
             tooltip.style.top = '50%';
@@ -603,6 +612,8 @@
             arrowDir = 'bottom';
         }
         if (ttTop < 10) {
+            // Not enough room anywhere — centre and hide the arrow
+            hideArrow();
             tooltip.style.left = '50%';
             tooltip.style.top = '50%';
             tooltip.style.transform = 'translate(-50%, -50%)';
@@ -708,7 +719,6 @@
         awaitingPage = null;
 
         if (forceRestart) {
-            // Wipe the flag so the tour will be shown again next time
             clearTutorialFlag(currentTutUser);
         }
         showStep();
@@ -727,7 +737,6 @@
         awaitingPage = null;
         hideUi();
         if (currentTutUser) {
-            // Store on the user record so account deletion resets it
             markTutorialSeen(currentTutUser);
         }
     }
@@ -815,7 +824,7 @@
     });
 
     // -------------------------------------------------------------
-    //  BOOT  — auto-start for brand-new accounts
+    //  BOOT
     // -------------------------------------------------------------
     function boot() {
         currentTutUser = localStorage.getItem('currentUser');
