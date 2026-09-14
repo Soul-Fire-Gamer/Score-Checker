@@ -389,7 +389,7 @@
     }
 
     // -------------------------------------------------------------
-    //  MASKS
+    //  MASKS  (four panels around the target)
     // -------------------------------------------------------------
     function positionMasks(rect, pad) {
         const top    = document.getElementById('tutMaskTop');
@@ -406,10 +406,10 @@
         const w = rect.width + pad * 2;
         const h = rect.height + pad * 2;
 
-        setBox(top,    0,        0,        vw, Math.max(0, y));
-        setBox(bottom, 0,        y + h,    vw, Math.max(0, vh - (y + h)));
-        setBox(left,   0,        y,        Math.max(0, x), h);
-        setBox(right,  x + w,    y,        Math.max(0, vw - (x + w)), h);
+        setBox(top,    0,     0,     vw, Math.max(0, y));
+        setBox(bottom, 0,     y + h, vw, Math.max(0, vh - (y + h)));
+        setBox(left,   0,     y,     Math.max(0, x), h);
+        setBox(right,  x + w, y,     Math.max(0, vw - (x + w)), h);
 
         [top, bottom, left, right].forEach(p => p.classList.add('active'));
     }
@@ -542,11 +542,11 @@
 
         let ttLeft = rect.left + rect.width / 2 - tipW / 2;
         let ttTop = rect.bottom + 22;
-        let arrowDir = 'bottom';
+        let arrowDir = 'top';       // tooltip BELOW target → arrow on top edge, pointing UP
 
         if (ttTop + tipH > vh - 10) {
             ttTop = rect.top - tipH - 22;
-            arrowDir = 'top';
+            arrowDir = 'bottom';    // tooltip ABOVE target → arrow on bottom edge, pointing DOWN
         }
         if (ttTop < 10) {
             // No room above or below — centre the tooltip and hide the arrow
