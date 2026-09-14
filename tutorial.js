@@ -4,20 +4,13 @@
 //    the user clicks it AND the expected DOM change actually
 //    happened. Otherwise an inline error is shown.
 //  - Info steps just show a tooltip with a Next button.
-//  - Arrow and highlight stay aligned to the target on scroll.
+//  - Arrow position AND direction are set inline by JS so the
+//    tooltip always points at the target, regardless of CSS cache.
 // =============================================================
 (function () {
 
     // -------------------------------------------------------------
     //  STEP DEFINITIONS
-    //    type          'info' | 'action'
-    //    target        CSS selector (or fn) to highlight
-    //    waitForClick  CSS selector (or fn) to watch for clicks
-    //    prefill       fn to auto-fill required inputs before the user clicks
-    //    captureBefore fn returning a snapshot of pre-click state
-    //    verify        fn (before) -> bool | Promise<bool>
-    //    verifyError   message shown if verify() fails
-    //    hint          text under body prompting the user to act
     // -------------------------------------------------------------
     const STEPS = [
         {
@@ -477,27 +470,55 @@
         }
     }
 
-    // Compute arrow horizontal position so it points at targetCenterX
-    function positionArrow(targetCenterX) {
+    // -------------------------------------------------------------
+    //  ARROW — direction + horizontal position, all inline
+    //  (bulletproof: does not depend on any CSS class)
+    // -------------------------------------------------------------
+    function positionArrow(targetCenterX, dir) {
         const arrow = document.getElementById('ttArrow');
         const tooltip = document.getElementById('tutTooltip');
         if (!arrow || !tooltip) return;
 
-        const tRect = tooltip.getBoundingClientRect();
-        const arrowHalf = 12;       // half of the 24px wide triangle
-        const borderLeft = 2;       // matches .tut-tooltip border
+        // Base geometry (set every time so nothing depends on CSS state)
+        arrow.style.position = 'absolute';
+        arrow.style.width = '0';
+        arrow.style.height = '0';
+        arrow.style.borderLeft = '12px solid transparent';
+        arrow.style.borderRight = '12px solid transparent';
 
-        let arrowLeft = targetCenterX - tRect.left - borderLeft - arrowHalf;
+        if (dir === 'top') {
+            // Tooltip is BELOW the target → arrow at top edge, pointing UP
+            arrow.style.top = '-14px';
+            arrow.style.bottom = 'auto';
+            arrow.style.borderTop = 'none';
+            arrow.style.borderBottom = '12px solid #4f46e5';
+        } else {
+            // Tooltip is ABOVE the target → arrow at bottom edge, pointing DOWN
+            arrow.style.top = 'auto';
+            arrow.style.bottom = '-14px';
+            arrow.style.borderTop = '12px solid #4f46e5';
+            arrow.style.borderBottom = 'none';
+        }
+
+        // Horizontal: aim the arrow at the target's viewport centre
+        const tRect = tooltip.getBoundingClientRect();
+        const arrowHalf = 12;       // half the width of the triangle
+        const borderW = 2;          // tooltip border thickness
+        let arrowLeft = targetCenterX - tRect.left - borderW - arrowHalf;
+
+        // Clamp so the arrow never wanders outside the tooltip body
         const min = 20;
         const max = tRect.width - 40;
         if (arrowLeft < min) arrowLeft = min;
         if (arrowLeft > max) arrowLeft = max;
+
         arrow.style.left = arrowLeft + 'px';
         arrow.style.transform = 'none';
     }
 
-    // Positions tooltip, highlight, masks and arrow for the current target.
-    // Called on show and on any scroll / resize.
+    // -------------------------------------------------------------
+    //  POSITION EVERYTHING  (tooltip, highlight, masks, arrow)
+    // -------------------------------------------------------------
     function positionAll(step, targetEl) {
         const tooltip = document.getElementById('tutTooltip');
         const highlight = document.getElementById('tutHighlight');
@@ -523,7 +544,7 @@
         const rect = targetEl.getBoundingClientRect();
         const pad = 8;
 
-        // Highlight box
+        // Highlight ring
         highlight.style.left = (rect.left - pad) + 'px';
         highlight.style.top = (rect.top - pad) + 'px';
         highlight.style.width = (rect.width + pad * 2) + 'px';
@@ -531,25 +552,25 @@
         highlight.classList.add('active');
         highlight.style.display = 'block';
 
-        // Masks (four panels around the highlight)
+        // Masks (four panels around the target)
         positionMasks(rect, pad);
 
-        // Tooltip position — above or below target, whichever fits
+        // Decide tooltip placement
         const vw = window.innerWidth;
         const vh = window.innerHeight;
         const tipW = 420;
         const tipH = tooltip.offsetHeight || 260;
 
         let ttLeft = rect.left + rect.width / 2 - tipW / 2;
-        let ttTop = rect.bottom + 22;
-        let arrowDir = 'top';       // tooltip BELOW target → arrow on top edge, pointing UP
+        let ttTop  = rect.bottom + 22;
+        let arrowDir = 'top';        // tooltip BELOW target → arrow on TOP edge, points UP
 
         if (ttTop + tipH > vh - 10) {
             ttTop = rect.top - tipH - 22;
-            arrowDir = 'bottom';    // tooltip ABOVE target → arrow on bottom edge, pointing DOWN
+            arrowDir = 'bottom';     // tooltip ABOVE target → arrow on BOTTOM edge, points DOWN
         }
         if (ttTop < 10) {
-            // No room above or below — centre the tooltip and hide the arrow
+            // No room above or below — centre the tooltip, hide arrow
             tooltip.style.left = '50%';
             tooltip.style.top = '50%';
             tooltip.style.transform = 'translate(-50%, -50%)';
@@ -562,15 +583,13 @@
         tooltip.style.left = ttLeft + 'px';
         tooltip.style.top = ttTop + 'px';
         tooltip.style.transform = 'none';
-        arrow.className = 'tt-arrow';
-        if (arrowDir === 'top') arrow.classList.add('top');
         tooltip.classList.add('active');
 
         // Point the arrow at the target's horizontal centre
         const targetCenterX = rect.left + rect.width / 2;
-        positionArrow(targetCenterX);
+        positionArrow(targetCenterX, arrowDir);
 
-        // Auto-scroll the target into view if it's off-screen
+        // Auto-scroll if the target is off-screen
         if (rect.top < 0 || rect.bottom > vh) {
             targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
@@ -604,7 +623,6 @@
 
         detachClickWatcher();
 
-        // Snapshot the pre-click state for verify()
         const beforeSnapshot = step.captureBefore ? step.captureBefore() : null;
 
         clickWatcher = {
@@ -634,7 +652,6 @@
                     }
                 }
 
-                // If the step declares an "after" selector, wait for it
                 if (step.expectAfter) {
                     const el = await waitFor(step.expectAfter, step.verifyTimeout || 2500);
                     if (!el) {
@@ -696,7 +713,6 @@
         const step = STEPS[idx];
         if (!step) return finish();
 
-        // Navigate to the right page first
         const wanted = step.page || 'dashboard';
         if (currentPageName() !== wanted) {
             awaitingPage = wanted;
@@ -712,7 +728,6 @@
         awaitingPage = null;
         hideUi();
 
-        // Optional async prelude
         if (step.before) {
             try {
                 await step.before();
@@ -725,7 +740,6 @@
             }
         }
 
-        // Pre-fill required inputs so the user's click is guaranteed to succeed
         if (step.prefill) {
             try { step.prefill(); } catch (e) { console.warn('[tutorial] prefill failed:', e); }
         }
@@ -733,12 +747,10 @@
         await sleep(120);
         const targetEl = resolveTarget(step);
 
-        // If the step needs a target and it's missing, skip
         if (step.target && !targetEl && step.type === 'action') {
             console.warn(`[tutorial] Skipping "${step.id}": target "${resolveSelector(step.target)}" not found`);
             return advance();
         }
-        // Info step whose target is missing → centre it
         if (step.target && !targetEl && step.type === 'info') {
             requestAnimationFrame(() => renderTooltip(step, null));
             return;
@@ -763,7 +775,6 @@
         }
     });
 
-    // Keep highlight + tooltip + arrow glued to the target on scroll/resize
     document.addEventListener('scroll', scheduleReposition, { passive: true, capture: true });
     window.addEventListener('resize', scheduleReposition);
 
