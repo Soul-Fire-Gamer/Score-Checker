@@ -1,27 +1,32 @@
 // =============================================================
-//  INTERACTIVE TUTORIAL  (action-driven)
-//  - Action steps highlight ONE element and advance when the user
-//    clicks it. A four-panel mask dims everything else.
-//  - Information steps just show a centered tooltip with Next.
-//  - Steps verify their target exists before showing; if not,
-//    they skip themselves so the tour stays accurate.
+//  INTERACTIVE TUTORIAL  (action-driven with verification)
+//  - Action steps highlight ONE element and only advance when
+//    the user clicks it AND the expected DOM change actually
+//    happened. Otherwise an inline error is shown.
+//  - Info steps just show a tooltip with a Next button.
+//  - Arrow and highlight stay aligned to the target on scroll.
 // =============================================================
 (function () {
 
     // -------------------------------------------------------------
     //  STEP DEFINITIONS
-    //  type: 'info'   → centered tooltip, Next button, no highlight
-    //  type: 'action' → highlights the target and waits for a click
-    //  waitForClick   → CSS selector (or fn) to watch for clicks
-    //  hint           → text under the body, prompts the user
+    //    type          'info' | 'action'
+    //    target        CSS selector (or fn) to highlight
+    //    waitForClick  CSS selector (or fn) to watch for clicks
+    //    prefill       fn to auto-fill required inputs before the user clicks
+    //    captureBefore fn returning a snapshot of pre-click state
+    //    verify        fn (before) -> bool | Promise<bool>
+    //    verifyError   message shown if verify() fails
+    //    hint          text under body prompting the user to act
     // -------------------------------------------------------------
     const STEPS = [
         {
             id: 'welcome',
             page: 'dashboard',
             type: 'info',
+            centered: true,
             title: '👋 Welcome to Academic Tracker!',
-            text: 'This quick tour walks through every feature. You can skip anytime and restart from the <strong>?</strong> button in the header.',
+            text: 'This tour walks through every feature. Actions you need to perform will be highlighted — just click them to continue. You can skip anytime and restart from the <strong>?</strong> button in the header.',
             nextText: 'Start Tour'
         },
         {
@@ -35,10 +40,21 @@
             id: 'click-add-subject',
             page: 'dashboard',
             type: 'action',
-            target: '.dashboard-page .sidebar-panel .input-row input',
+            target: '.dashboard-page .sidebar-panel .input-row',
             waitForClick: '#addSubjectBtn',
+            prefill: () => {
+                const input = document.getElementById('subjectInput');
+                if (input && !input.value.trim()) {
+                    input.value = 'Sample Subject';
+                    input.dispatchEvent(new Event('input', { bubbles: true }));
+                    input.focus();
+                }
+            },
+            captureBefore: () => document.querySelectorAll('#subjectsList .subject-card').length,
+            verify: (before) => document.querySelectorAll('#subjectsList .subject-card').length > before,
+            verifyError: 'The subject wasn\'t added. Type a name in the input first, then click Add.',
             title: '➕ Add a Subject',
-            text: 'Type a subject name, then click <strong>Add</strong>. The subject will appear in the list below and on the Subjects page.',
+            text: 'Type a subject name, then click <strong>Add</strong>. I\'ve pre-filled a sample name for you — change it if you like.',
             hint: 'Click the Add button to continue.'
         },
         {
@@ -55,10 +71,11 @@
             type: 'action',
             target: '.dashboard-page #subjectsList .subject-card',
             waitForClick: '.dashboard-page #subjectsList .subject-card',
+            verify: () => !!document.querySelector('.dashboard-page #subjectDetail .period-tabs'),
+            verifyError: 'The subject detail didn\'t open. Try clicking the subject card again.',
             title: '👆 Open a Subject',
             text: 'Click any subject card to see its quarterly detail view.',
-            hint: 'Click a subject card to continue.',
-            skipIfTargetMissing: true
+            hint: 'Click the subject card to continue.'
         },
         {
             id: 'detail',
@@ -66,8 +83,7 @@
             type: 'info',
             target: '.dashboard-page #subjectDetail .period-tabs',
             title: '👁️ Detail View (Read-Only)',
-            text: 'The right panel shows the subject\'s score breakdown. Use the <strong>Q1–Q4</strong>, <strong>Final Exam</strong>, <strong>S1</strong>, <strong>S2</strong>, and <strong>Total</strong> tabs. Edits happen on the Subjects page.',
-            skipIfTargetMissing: true
+            text: 'The right panel shows the subject\'s score breakdown. Use the <strong>Q1–Q4</strong>, <strong>Final Exam</strong>, <strong>S1</strong>, <strong>S2</strong>, and <strong>Total</strong> tabs. Edits happen on the Subjects page.'
         },
         {
             id: 'nav-subjects',
@@ -75,18 +91,11 @@
             type: 'action',
             target: '.app-sidebar .nav-item[data-page="subjects"]',
             waitForClick: '.app-sidebar .nav-item[data-page="subjects"]',
+            verify: () => document.getElementById('pageTitle').textContent.toLowerCase() === 'subjects',
+            verifyError: 'Navigation didn\'t happen. Click Subjects in the sidebar.',
             title: '✏️ Time to Edit',
-            text: 'Click the <strong>Subjects</strong> tab to open the editing workspace.',
+            text: 'Click <strong>Subjects</strong> in the sidebar to open the editing workspace.',
             hint: 'Click Subjects in the sidebar.'
-        },
-        {
-            id: 'subjects-overview',
-            page: 'subjects',
-            type: 'info',
-            target: '#subjectsList',
-            title: '📖 All Subjects',
-            text: 'Each card shows the subject name, assignment count, current grade, quarter averages, and final exam status.',
-            skipIfTargetMissing: true
         },
         {
             id: 'click-subject-editor',
@@ -94,10 +103,11 @@
             type: 'action',
             target: '#subjectsList .subject-card',
             waitForClick: '#subjectsList .subject-card',
+            verify: () => document.getElementById('editorModal').classList.contains('active'),
+            verifyError: 'The editor didn\'t open. Click a subject card to try again.',
             title: '🎯 Open the Editor',
             text: 'Click a subject to open the modal editor.',
-            hint: 'Click any subject card to continue.',
-            skipIfTargetMissing: true
+            hint: 'Click a subject card to continue.'
         },
         {
             id: 'period-tabs',
@@ -105,8 +115,7 @@
             type: 'info',
             target: '#editorContainer .period-tabs',
             title: '🗂️ Quarters & Semesters',
-            text: '<strong>Q1–Q4</strong> are the four quarters. <strong>📝 Final Exam</strong> counts for <strong>30%</strong> of the total grade. <strong>S1</strong> and <strong>S2</strong> are semester averages. <strong>Total</strong> is the final weighted grade.',
-            skipIfTargetMissing: true
+            text: '<strong>Q1–Q4</strong> are the four quarters. <strong>📝 Final Exam</strong> counts for <strong>30%</strong> of the total grade. <strong>S1</strong> and <strong>S2</strong> are semester averages. <strong>Total</strong> is the final weighted grade.'
         },
         {
             id: 'click-assignment-form',
@@ -114,17 +123,26 @@
             type: 'action',
             target: '#editorContainer .assignment-panel',
             waitForClick: '#addAssignmentBtn',
-            title: '➕ Add an Assignment',
-            text: 'Enter a name, score and max, then click <strong>Add Assignment</strong>. Within a quarter, minors and majors weigh 40% / 60%.',
-            hint: 'Click Add Assignment when you\'re ready.',
-            before: async () => {
-                const q1 = document.querySelector('#editorContainer .period-tab[data-period="Q1"]');
-                if (q1 && !document.querySelector('#editorContainer .assignment-panel')) {
-                    q1.click();
-                    await waitFor('#editorContainer .assignment-panel');
+            prefill: () => {
+                const nameEl = document.getElementById('assignmentName');
+                const scoreEl = document.getElementById('scoreObtained');
+                const maxEl = document.getElementById('scoreMax');
+                if (nameEl && !nameEl.value.trim()) {
+                    nameEl.value = 'Sample Quiz';
+                    nameEl.dispatchEvent(new Event('input', { bubbles: true }));
                 }
+                if (scoreEl && !scoreEl.value) {
+                    scoreEl.value = '85';
+                    scoreEl.dispatchEvent(new Event('input', { bubbles: true }));
+                }
+                if (maxEl && !maxEl.value) maxEl.value = '100';
             },
-            skipIfTargetMissing: true
+            captureBefore: () => document.querySelectorAll('#editorContainer .edit-assignment-btn').length,
+            verify: (before) => document.querySelectorAll('#editorContainer .edit-assignment-btn').length > before,
+            verifyError: 'The assignment wasn\'t added. Make sure Name, Score and Max are filled in.',
+            title: '➕ Add an Assignment',
+            text: 'Enter a name, score and max, then click <strong>Add Assignment</strong>. I\'ve pre-filled sample values for you.',
+            hint: 'Click Add Assignment to continue.'
         },
         {
             id: 'manual-avg',
@@ -132,8 +150,7 @@
             type: 'info',
             target: '#editorContainer .average-setter',
             title: '🎚️ Manual Average Override',
-            text: 'Set a quarter average directly to override the calculated value. Useful for transfer credits or teacher-provided averages. Clear it whenever you want the automatic average back.',
-            skipIfTargetMissing: true
+            text: 'Set a quarter average directly to override the calculated value. Useful for transfer credits or teacher-provided averages.'
         },
         {
             id: 'click-final-exam-tab',
@@ -141,10 +158,11 @@
             type: 'action',
             target: '#editorContainer .period-tab[data-period="Final Exam"]',
             waitForClick: '#editorContainer .period-tab[data-period="Final Exam"]',
+            verify: () => !!document.querySelector('#editorContainer .period-tab.active[data-period="Final Exam"]'),
+            verifyError: 'The Final Exam tab didn\'t open. Click it again.',
             title: '📝 Final Exam',
             text: 'Click the <strong>📝 Final Exam</strong> tab to add or update the year-end exam score.',
-            hint: 'Click the Final Exam tab to continue.',
-            skipIfTargetMissing: true
+            hint: 'Click the Final Exam tab to continue.'
         },
         {
             id: 'close-editor',
@@ -152,10 +170,11 @@
             type: 'action',
             target: '#closeModalBtn',
             waitForClick: '#closeModalBtn',
+            verify: () => !document.getElementById('editorModal').classList.contains('active'),
+            verifyError: 'The editor didn\'t close. Click the X button again.',
             title: '✖️ Close the Editor',
             text: 'When you\'re done, click the <strong>X</strong> to close the editor and return to the subject list.',
-            hint: 'Click the X button to continue.',
-            skipIfTargetMissing: true
+            hint: 'Click the X button to continue.'
         },
         {
             id: 'nav-calendar',
@@ -163,6 +182,8 @@
             type: 'action',
             target: '.app-sidebar .nav-item[data-page="calendar"]',
             waitForClick: '.app-sidebar .nav-item[data-page="calendar"]',
+            verify: () => document.getElementById('pageTitle').textContent.toLowerCase() === 'calendar',
+            verifyError: 'Navigation didn\'t happen. Click Calendar in the sidebar.',
             title: '📅 Deadlines Calendar',
             text: 'Track assignments, tests, and project deadlines per day. Click <strong>Calendar</strong> to continue.',
             hint: 'Click Calendar in the sidebar.'
@@ -181,9 +202,19 @@
             type: 'action',
             target: '.add-event-form',
             waitForClick: '#addEventBtn',
+            prefill: () => {
+                const titleEl = document.getElementById('newEventTitle');
+                if (titleEl && !titleEl.value.trim()) {
+                    titleEl.value = 'Sample Deadline';
+                    titleEl.dispatchEvent(new Event('input', { bubbles: true }));
+                }
+            },
+            captureBefore: () => document.querySelectorAll('.event-item').length,
+            verify: (before) => document.querySelectorAll('.event-item').length > before,
+            verifyError: 'The deadline wasn\'t added. Make sure a title is entered.',
             title: '➕ Add a Deadline',
             text: 'Give it a title, an optional time, and an optional description. Click <strong>Add Deadline</strong> to save.',
-            hint: 'Fill in a title and click Add Deadline.'
+            hint: 'Click Add Deadline to continue.'
         },
         {
             id: 'nav-notes',
@@ -191,6 +222,8 @@
             type: 'action',
             target: '.app-sidebar .nav-item[data-page="notes"]',
             waitForClick: '.app-sidebar .nav-item[data-page="notes"]',
+            verify: () => document.getElementById('pageTitle').textContent.toLowerCase() === 'notes',
+            verifyError: 'Navigation didn\'t happen. Click Notes in the sidebar.',
             title: '📝 Notes',
             text: 'A freeform scratchpad. Click <strong>Notes</strong> in the sidebar.',
             hint: 'Click Notes in the sidebar.'
@@ -209,6 +242,8 @@
             type: 'action',
             target: '.app-sidebar .nav-item[data-page="profile"]',
             waitForClick: '.app-sidebar .nav-item[data-page="profile"]',
+            verify: () => document.getElementById('pageTitle').textContent.toLowerCase() === 'profile',
+            verifyError: 'Navigation didn\'t happen. Click Profile in the sidebar.',
             title: '👤 Profile',
             text: 'Avatar, password, backups, and account management. Click <strong>Profile</strong> in the sidebar.',
             hint: 'Click Profile in the sidebar.'
@@ -256,8 +291,8 @@
     let awaitingPage = null;
     let currentTutUser = null;
     let domReady = false;
-    let clickWatcher = null;         // { el, handler }
-    let resizeHandler = null;
+    let clickWatcher = null;
+    let repositionPending = false;
 
     // -------------------------------------------------------------
     //  HELPERS
@@ -295,13 +330,14 @@
         const sel = typeof raw === 'function' ? raw() : raw;
         return sel || null;
     }
-    function resolveTarget(step) { return resolveSelector(step.target) ? document.querySelector(resolveSelector(step.target)) : null; }
-    function resolveClick(step)  { return resolveSelector(step.waitForClick); }
+    function resolveTarget(step) {
+        const sel = resolveSelector(step.target);
+        return sel ? document.querySelector(sel) : null;
+    }
+    function resolveClick(step) { return resolveSelector(step.waitForClick); }
 
     // -------------------------------------------------------------
     //  DOM  (injected once)
-    //  The mask is 4 divs around the highlighted element so the
-    //  target itself remains interactive.
     // -------------------------------------------------------------
     function ensureDom() {
         if (domReady) return;
@@ -309,6 +345,7 @@
 
         const frag = document.createElement('div');
         frag.innerHTML = `
+            <div class="tut-overlay" id="tutOverlay"></div>
             <div class="tut-mask" id="tutMaskTop"></div>
             <div class="tut-mask" id="tutMaskBottom"></div>
             <div class="tut-mask" id="tutMaskLeft"></div>
@@ -319,6 +356,7 @@
                 <div class="tt-title" id="ttTitle"></div>
                 <div class="tt-text" id="ttText"></div>
                 <div class="tt-hint" id="ttHint"></div>
+                <div class="tt-error" id="ttError"></div>
                 <div class="tt-actions">
                     <button class="tt-skip" id="ttSkip">Skip Tour</button>
                     <button class="tt-next" id="ttNext">Next</button>
@@ -351,7 +389,7 @@
     }
 
     // -------------------------------------------------------------
-    //  MASKS  (four panels around the target)
+    //  MASKS
     // -------------------------------------------------------------
     function positionMasks(rect, pad) {
         const top    = document.getElementById('tutMaskTop');
@@ -368,19 +406,15 @@
         const w = rect.width + pad * 2;
         const h = rect.height + pad * 2;
 
-        // Top panel: full width, from top to top of target
-        set(top, 0, 0, vw, Math.max(0, y));
-        // Bottom panel
-        set(bottom, 0, y + h, vw, Math.max(0, vh - (y + h)));
-        // Left panel
-        set(left, 0, y, Math.max(0, x), h);
-        // Right panel
-        set(right, x + w, y, Math.max(0, vw - (x + w)), h);
+        setBox(top,    0,        0,        vw, Math.max(0, y));
+        setBox(bottom, 0,        y + h,    vw, Math.max(0, vh - (y + h)));
+        setBox(left,   0,        y,        Math.max(0, x), h);
+        setBox(right,  x + w,    y,        Math.max(0, vw - (x + w)), h);
 
         [top, bottom, left, right].forEach(p => p.classList.add('active'));
     }
 
-    function set(el, left, top, width, height) {
+    function setBox(el, left, top, width, height) {
         el.style.left = left + 'px';
         el.style.top = top + 'px';
         el.style.width = width + 'px';
@@ -390,6 +424,7 @@
     function hideMasks() {
         ['tutMaskTop', 'tutMaskBottom', 'tutMaskLeft', 'tutMaskRight']
             .forEach(id => document.getElementById(id)?.classList.remove('active'));
+        document.getElementById('tutOverlay')?.classList.remove('active');
     }
 
     // -------------------------------------------------------------
@@ -411,26 +446,28 @@
         }
     }
 
-    function renderTooltip(step, targetEl) {
-        const tooltip = document.getElementById('tutTooltip');
-        const highlight = document.getElementById('tutHighlight');
-        const arrow = document.getElementById('ttArrow');
-        const hintEl = document.getElementById('ttHint');
-        if (!tooltip || !highlight || !arrow) return;
+    function showVerifyError(msg) {
+        const el = document.getElementById('ttError');
+        if (!el) return;
+        el.textContent = msg;
+        el.classList.add('active');
+        setTimeout(() => el.classList.remove('active'), 4500);
+    }
 
+    function setTooltipContent(step) {
         document.getElementById('ttTitle').textContent = step.title;
         document.getElementById('ttText').innerHTML = step.text;
         document.getElementById('ttStepNow').textContent = idx + 1;
+        document.getElementById('ttError').classList.remove('active');
 
-        // Hint text (for action steps)
+        const hintEl = document.getElementById('ttHint');
         if (hintEl) {
             hintEl.textContent = step.hint || '';
             hintEl.style.display = step.hint ? 'block' : 'none';
         }
 
-        // Next button: only meaningful on info steps
         const nextBtn = document.getElementById('ttNext');
-        const isAction = step.type === 'action' && targetEl;
+        const isAction = step.type === 'action';
         if (isAction) {
             nextBtn.style.display = 'none';
         } else {
@@ -438,14 +475,44 @@
             nextBtn.textContent = step.nextText || (idx === STEPS.length - 1 ? 'Finish Tour' : 'Next');
             nextBtn.className = idx === STEPS.length - 1 ? 'tt-next done' : 'tt-next';
         }
+    }
+
+    // Compute arrow horizontal position so it points at targetCenterX
+    function positionArrow(targetCenterX) {
+        const arrow = document.getElementById('ttArrow');
+        const tooltip = document.getElementById('tutTooltip');
+        if (!arrow || !tooltip) return;
+
+        const tRect = tooltip.getBoundingClientRect();
+        const arrowHalf = 12;       // half of the 24px wide triangle
+        const borderLeft = 2;       // matches .tut-tooltip border
+
+        let arrowLeft = targetCenterX - tRect.left - borderLeft - arrowHalf;
+        const min = 20;
+        const max = tRect.width - 40;
+        if (arrowLeft < min) arrowLeft = min;
+        if (arrowLeft > max) arrowLeft = max;
+        arrow.style.left = arrowLeft + 'px';
+        arrow.style.transform = 'none';
+    }
+
+    // Positions tooltip, highlight, masks and arrow for the current target.
+    // Called on show and on any scroll / resize.
+    function positionAll(step, targetEl) {
+        const tooltip = document.getElementById('tutTooltip');
+        const highlight = document.getElementById('tutHighlight');
+        const arrow = document.getElementById('ttArrow');
+        const overlay = document.getElementById('tutOverlay');
+        if (!tooltip || !highlight || !arrow || !overlay) return;
 
         tooltip.classList.remove('centered');
         highlight.classList.remove('active');
         highlight.style.display = 'none';
         hideMasks();
 
-        // Centered info steps (no target)
-        if (!targetEl || step.type === 'info' && !targetEl) {
+        // Centered info step (no target)
+        if (!targetEl) {
+            overlay.classList.add('active');
             tooltip.style.left = '50%';
             tooltip.style.top = '50%';
             tooltip.style.transform = 'translate(-50%, -50%)';
@@ -453,19 +520,21 @@
             return;
         }
 
-        // Position highlight + masks
         const rect = targetEl.getBoundingClientRect();
         const pad = 8;
 
+        // Highlight box
         highlight.style.left = (rect.left - pad) + 'px';
         highlight.style.top = (rect.top - pad) + 'px';
         highlight.style.width = (rect.width + pad * 2) + 'px';
         highlight.style.height = (rect.height + pad * 2) + 'px';
         highlight.classList.add('active');
         highlight.style.display = 'block';
+
+        // Masks (four panels around the highlight)
         positionMasks(rect, pad);
 
-        // Position tooltip near the target
+        // Tooltip position — above or below target, whichever fits
         const vw = window.innerWidth;
         const vh = window.innerHeight;
         const tipW = 420;
@@ -480,7 +549,7 @@
             arrowDir = 'top';
         }
         if (ttTop < 10) {
-            // Not enough room above or below — centre it
+            // No room above or below — centre the tooltip and hide the arrow
             tooltip.style.left = '50%';
             tooltip.style.top = '50%';
             tooltip.style.transform = 'translate(-50%, -50%)';
@@ -497,14 +566,37 @@
         if (arrowDir === 'top') arrow.classList.add('top');
         tooltip.classList.add('active');
 
+        // Point the arrow at the target's horizontal centre
+        const targetCenterX = rect.left + rect.width / 2;
+        positionArrow(targetCenterX);
+
+        // Auto-scroll the target into view if it's off-screen
         if (rect.top < 0 || rect.bottom > vh) {
             targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            setTimeout(() => renderTooltip(step, targetEl), 400);
         }
     }
 
+    function renderTooltip(step, targetEl) {
+        setTooltipContent(step);
+        positionAll(step, targetEl);
+    }
+
+    // Throttled re-position on scroll / resize
+    function scheduleReposition() {
+        if (!active) return;
+        if (repositionPending) return;
+        repositionPending = true;
+        requestAnimationFrame(() => {
+            repositionPending = false;
+            const step = STEPS[idx];
+            if (!step) return;
+            const targetEl = resolveTarget(step);
+            positionAll(step, targetEl);
+        });
+    }
+
     // -------------------------------------------------------------
-    //  ACTION STEP  →  wait for user to click the highlighted element
+    //  ACTION STEP  →  wait for user to click, verify the result
     // -------------------------------------------------------------
     function attachClickWatcher(step) {
         const sel = resolveClick(step);
@@ -512,28 +604,48 @@
 
         detachClickWatcher();
 
+        // Snapshot the pre-click state for verify()
+        const beforeSnapshot = step.captureBefore ? step.captureBefore() : null;
+
         clickWatcher = {
-            handler: function (e) {
+            verifying: false,
+            handler: async function (e) {
                 const hit = e.target.closest(sel);
                 if (!hit) return;
+                if (clickWatcher.verifying) return;
+                clickWatcher.verifying = true;
 
-                console.log('[tutorial] action confirmed for step:', step.id);
-                detachClickWatcher();
+                // Let the app's own handler run first
+                await sleep(180);
 
-                // Let the click's native handler run first, then advance
-                setTimeout(() => {
-                    if (step.id === 'click-subject-editor' || step.id === 'click-subject-card') {
-                        // Wait for the editor to appear before advancing
-                        waitFor('#editorContainer .period-tabs', 1500).then(() => advance());
-                    } else if (step.id === 'click-add-subject') {
-                        // Wait for the new card to appear
-                        waitFor('.dashboard-page #subjectsList .subject-card', 1500).then(() => advance());
-                    } else if (step.id === 'add-deadline') {
-                        waitFor('.event-item', 1500).then(() => advance());
-                    } else {
-                        advance();
+                // Run the step's verify predicate (sync or async)
+                if (step.verify) {
+                    let ok = false;
+                    try {
+                        ok = await step.verify(beforeSnapshot);
+                    } catch (err) {
+                        console.warn('[tutorial] verify threw:', err);
+                        ok = false;
                     }
-                }, 120);
+                    if (!ok) {
+                        showVerifyError(step.verifyError || 'That didn\'t work — please try again.');
+                        clickWatcher.verifying = false;
+                        return;
+                    }
+                }
+
+                // If the step declares an "after" selector, wait for it
+                if (step.expectAfter) {
+                    const el = await waitFor(step.expectAfter, step.verifyTimeout || 2500);
+                    if (!el) {
+                        showVerifyError(step.verifyError || 'That didn\'t work — please try again.');
+                        clickWatcher.verifying = false;
+                        return;
+                    }
+                }
+
+                detachClickWatcher();
+                advance();
             }
         };
         document.addEventListener('click', clickWatcher.handler, true);
@@ -600,7 +712,7 @@
         awaitingPage = null;
         hideUi();
 
-        // Optional prelude
+        // Optional async prelude
         if (step.before) {
             try {
                 await step.before();
@@ -613,15 +725,20 @@
             }
         }
 
+        // Pre-fill required inputs so the user's click is guaranteed to succeed
+        if (step.prefill) {
+            try { step.prefill(); } catch (e) { console.warn('[tutorial] prefill failed:', e); }
+        }
+
         await sleep(120);
         const targetEl = resolveTarget(step);
 
-        // Skip if the step needs a target that isn't there
-        if (step.target && !targetEl && step.type !== 'info') {
+        // If the step needs a target and it's missing, skip
+        if (step.target && !targetEl && step.type === 'action') {
             console.warn(`[tutorial] Skipping "${step.id}": target "${resolveSelector(step.target)}" not found`);
             return advance();
         }
-        // Info step whose target isn't visible → show centered
+        // Info step whose target is missing → centre it
         if (step.target && !targetEl && step.type === 'info') {
             requestAnimationFrame(() => renderTooltip(step, null));
             return;
@@ -646,22 +763,14 @@
         }
     });
 
-    resizeHandler = function () {
-        if (!active) return;
-        const step = STEPS[idx];
-        if (!step) return;
-        const targetEl = resolveTarget(step);
-        renderTooltip(step, targetEl);
-    };
-    window.addEventListener('resize', resizeHandler);
+    // Keep highlight + tooltip + arrow glued to the target on scroll/resize
+    document.addEventListener('scroll', scheduleReposition, { passive: true, capture: true });
+    window.addEventListener('resize', scheduleReposition);
 
     document.addEventListener('keydown', function (e) {
         if (!active) return;
         if (e.key === 'Escape') {
             if (confirm('Close the tour?')) finish();
-        } else if (e.key === 'ArrowRight') {
-            e.preventDefault();
-            advance();
         }
     });
 
