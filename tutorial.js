@@ -4,9 +4,9 @@
 //    the user clicks it AND the expected DOM change actually
 //    happened. Otherwise an inline error is shown.
 //  - Info steps just show a tooltip with a Next button.
-//  - Arrow position AND direction are set inline by JS so the
-//    tooltip always points at the target, regardless of CSS cache.
-//  - Auto-starts the first time a new account logs in.
+//  - Arrow position AND direction are set inline by JS.
+//  - Auto-starts for brand-new accounts. Flag lives on the user
+//    record so deleting an account resets it automatically.
 // =============================================================
 (function () {
 
@@ -290,6 +290,48 @@
     let repositionPending = false;
 
     // -------------------------------------------------------------
+    //  TUTORIAL-SEEN FLAG  (stored on the user record)
+    //  Deleting the account wipes the flag automatically, so
+    //  re-registering the same username fires the tour again.
+    // -------------------------------------------------------------
+    function hasSeenTutorial(username) {
+        if (!username) return false;
+        if (!window.getUsers) {
+            // Fallback if app.js hasn't loaded: use a namespaced localStorage key
+            return localStorage.getItem('tutorial_seen_' + username) === 'true';
+        }
+        const users = window.getUsers();
+        const user = users[username];
+        return !!(user && user.tutorialSeen === true);
+    }
+
+    function markTutorialSeen(username) {
+        if (!username) return;
+        if (!window.getUsers || !window.saveUsers) {
+            localStorage.setItem('tutorial_seen_' + username, 'true');
+            return;
+        }
+        const users = window.getUsers();
+        if (!users[username]) users[username] = { username: username };
+        users[username].tutorialSeen = true;
+        window.saveUsers(users);
+    }
+
+    function clearTutorialFlag(username) {
+        if (!username) return;
+        // Clear on the user record...
+        if (window.getUsers && window.saveUsers) {
+            const users = window.getUsers();
+            if (users[username]) {
+                delete users[username].tutorialSeen;
+                window.saveUsers(users);
+            }
+        }
+        // ...and clear any stale legacy key from earlier versions
+        localStorage.removeItem('tutorial_seen_' + username);
+    }
+
+    // -------------------------------------------------------------
     //  HELPERS
     // -------------------------------------------------------------
     function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
@@ -384,7 +426,7 @@
     }
 
     // -------------------------------------------------------------
-    //  MASKS  (four panels around the target)
+    //  MASKS
     // -------------------------------------------------------------
     function positionMasks(rect, pad) {
         const top    = document.getElementById('tutMaskTop');
@@ -473,7 +515,7 @@
     }
 
     // -------------------------------------------------------------
-    //  ARROW  (all inline, no CSS dependency)
+    //  ARROW  (all inline)
     // -------------------------------------------------------------
     function positionArrow(targetCenterX, dir) {
         const arrow = document.getElementById('ttArrow');
@@ -487,13 +529,11 @@
         arrow.style.borderRight = '12px solid transparent';
 
         if (dir === 'top') {
-            // Tooltip BELOW target → arrow on TOP edge, points UP
             arrow.style.top = '-14px';
             arrow.style.bottom = 'auto';
             arrow.style.borderTop = 'none';
             arrow.style.borderBottom = '12px solid #4f46e5';
         } else {
-            // Tooltip ABOVE target → arrow on BOTTOM edge, points DOWN
             arrow.style.top = 'auto';
             arrow.style.bottom = '-14px';
             arrow.style.borderTop = '12px solid #4f46e5';
@@ -604,7 +644,7 @@
     }
 
     // -------------------------------------------------------------
-    //  ACTION STEP  →  wait for user to click, verify the result
+    //  ACTION STEP
     // -------------------------------------------------------------
     function attachClickWatcher(step) {
         const sel = resolveClick(step);
@@ -668,7 +708,8 @@
         awaitingPage = null;
 
         if (forceRestart) {
-            localStorage.removeItem('tutorial_seen_' + currentTutUser);
+            // Wipe the flag so the tour will be shown again next time
+            clearTutorialFlag(currentTutUser);
         }
         showStep();
     }
@@ -686,7 +727,8 @@
         awaitingPage = null;
         hideUi();
         if (currentTutUser) {
-            localStorage.setItem('tutorial_seen_' + currentTutUser, 'true');
+            // Store on the user record so account deletion resets it
+            markTutorialSeen(currentTutUser);
         }
     }
 
@@ -781,8 +823,7 @@
 
         ensureDom();
 
-        const seenKey = 'tutorial_seen_' + currentTutUser;
-        if (localStorage.getItem(seenKey)) {
+        if (hasSeenTutorial(currentTutUser)) {
             console.log('[tutorial] User has already seen the tour. Use the "?" button to replay.');
             return;
         }
@@ -794,11 +835,9 @@
             if (started) return;
             started = true;
             console.log('[tutorial] Starting tour (' + reason + ')');
-            // Short delay so the dashboard can finish any post-render work
             setTimeout(() => start(false), 300);
         };
 
-        // --- 1. If the dashboard is already rendered, start immediately ---
         const isDashboardReady = () => {
             const titleEl = document.getElementById('pageTitle');
             const container = document.getElementById('pageContainer');
@@ -814,7 +853,6 @@
             return;
         }
 
-        // --- 2. Otherwise, listen for the pageLoaded event dispatched by app.js ---
         const onDashboardLoaded = function (e) {
             if (!e.detail || e.detail.page !== 'dashboard') return;
             document.removeEventListener('pageLoaded', onDashboardLoaded);
@@ -822,18 +860,15 @@
         };
         document.addEventListener('pageLoaded', onDashboardLoaded);
 
-        // --- 3. Final safety net: start after 3s no matter what ---
         setTimeout(() => go('safety timeout'), 3000);
     }
 
-    // Run boot() once the DOM is ready (script is loaded at end of body)
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', boot);
     } else {
         boot();
     }
 
-    // Expose for manual triggering / testing
     window.startTutorial = () => start(true);
     window.skipTutorial = skipTour;
 
