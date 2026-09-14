@@ -24,7 +24,8 @@
     z-index: 9998;
     pointer-events: none;
     display: none;
-    transition: left 0.25s ease, top 0.25s ease, width 0.25s ease, height 0.25s ease;
+    transition: left 0.25s ease, top 0.25s ease,
+                width 0.25s ease, height 0.25s ease;
 }
 .tut-mask.active { display: block; }
 
@@ -41,7 +42,8 @@
     z-index: 9999;
     pointer-events: none;
     display: none;
-    transition: left 0.3s ease, top 0.3s ease, width 0.3s ease, height 0.3s ease;
+    transition: left 0.3s ease, top 0.3s ease,
+                width 0.3s ease, height 0.3s ease;
     animation: tutPulse 2s ease-in-out infinite;
 }
 .tut-highlight.active { display: block; }
@@ -73,30 +75,14 @@
 }
 
 /* -------------------------------------------------------------
-   ARROW (points from the tooltip toward the highlighted target)
-   - position is set inline by JS (left in px)
-   - 'top' modifier flips the arrow to the top edge
+   ARROW  —  minimal. All positioning + direction is set by JS
+   inline so no stylesheet can override it.
    ------------------------------------------------------------- */
 .tut-tooltip .tt-arrow {
     position: absolute;
     width: 0;
     height: 0;
-    border-left: 12px solid transparent;
-    border-right: 12px solid transparent;
-    border-top: 12px solid #4f46e5;
-    bottom: -14px;
-    left: 50%;
-    transform: translateX(-50%);
-    transition: left 0.25s ease;
 }
-.tut-tooltip .tt-arrow.top {
-    top: -14px;
-    bottom: auto;
-    border-top: none;
-    border-bottom: 12px solid #4f46e5;
-}
-/* When the tooltip has no target (centered), the arrow is irrelevant */
-.tut-tooltip.centered .tt-arrow { display: none; }
 
 /* -------------------------------------------------------------
    TOOLTIP CONTENT
@@ -119,7 +105,7 @@
 .tut-tooltip .tt-text em { color: #64748b; font-style: normal; }
 
 /* -------------------------------------------------------------
-   HINT (for action steps — prompts the user what to click)
+   HINT (action steps — prompts the user what to click)
    ------------------------------------------------------------- */
 .tut-tooltip .tt-hint {
     margin-top: 12px;
@@ -133,7 +119,7 @@
 }
 
 /* -------------------------------------------------------------
-   INLINE ERROR MESSAGE (shown when verification fails)
+   INLINE ERROR MESSAGE (when verification fails)
    ------------------------------------------------------------- */
 .tut-tooltip .tt-error {
     margin-top: 12px;
@@ -185,9 +171,7 @@
     background: #4338ca;
     transform: translateY(-1px);
 }
-.tut-tooltip .tt-next.done {
-    background: #10b981;
-}
+.tut-tooltip .tt-next.done { background: #10b981; }
 .tut-tooltip .tt-next.done:hover { background: #059669; }
 
 /* -------------------------------------------------------------
@@ -224,9 +208,7 @@
     background: rgba(255, 255, 255, 0.3);
     transform: scale(1.08);
 }
-.tut-help-btn:active {
-    transform: scale(0.96);
-}
+.tut-help-btn:active { transform: scale(0.96); }
 
 /* -------------------------------------------------------------
    RESPONSIVE
