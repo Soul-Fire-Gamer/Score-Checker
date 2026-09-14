@@ -12,14 +12,6 @@
 
     // -------------------------------------------------------------
     //  STEP DEFINITIONS
-    //    type          'info' | 'action'
-    //    target        CSS selector (or fn) to highlight
-    //    waitForClick  CSS selector (or fn) to watch for clicks
-    //    prefill       fn to auto-fill inputs before the user clicks
-    //    captureBefore fn returning a snapshot of pre-click state
-    //    verify        fn (before) -> bool | Promise<bool>
-    //    verifyError   message shown if verify() fails
-    //    hint          prompt text under the body
     // -------------------------------------------------------------
     const STEPS = [
         {
@@ -481,15 +473,13 @@
     }
 
     // -------------------------------------------------------------
-    //  ARROW — direction + horizontal position, all inline
-    //  (bulletproof: does not depend on any CSS class)
+    //  ARROW  (all inline, no CSS dependency)
     // -------------------------------------------------------------
     function positionArrow(targetCenterX, dir) {
         const arrow = document.getElementById('ttArrow');
         const tooltip = document.getElementById('tutTooltip');
         if (!arrow || !tooltip) return;
 
-        // Base geometry (set every time so nothing depends on CSS)
         arrow.style.position = 'absolute';
         arrow.style.width = '0';
         arrow.style.height = '0';
@@ -497,28 +487,24 @@
         arrow.style.borderRight = '12px solid transparent';
 
         if (dir === 'top') {
-            // Tooltip is BELOW the target → arrow sits on the tooltip's
-            // TOP edge and points UP toward the target.
+            // Tooltip BELOW target → arrow on TOP edge, points UP
             arrow.style.top = '-14px';
             arrow.style.bottom = 'auto';
             arrow.style.borderTop = 'none';
             arrow.style.borderBottom = '12px solid #4f46e5';
         } else {
-            // Tooltip is ABOVE the target → arrow sits on the tooltip's
-            // BOTTOM edge and points DOWN toward the target.
+            // Tooltip ABOVE target → arrow on BOTTOM edge, points DOWN
             arrow.style.top = 'auto';
             arrow.style.bottom = '-14px';
             arrow.style.borderTop = '12px solid #4f46e5';
             arrow.style.borderBottom = 'none';
         }
 
-        // Horizontal: aim the arrow at the target's viewport centre
         const tRect = tooltip.getBoundingClientRect();
-        const arrowHalf = 12;       // half the triangle's width
-        const borderW = 2;          // tooltip border thickness
+        const arrowHalf = 12;
+        const borderW = 2;
         let arrowLeft = targetCenterX - tRect.left - borderW - arrowHalf;
 
-        // Clamp so the arrow never wanders outside the tooltip body
         const min = 20;
         const max = tRect.width - 40;
         if (arrowLeft < min) arrowLeft = min;
@@ -529,21 +515,19 @@
     }
 
     // -------------------------------------------------------------
-    //  POSITION EVERYTHING  (tooltip, highlight, masks, arrow)
+    //  POSITION EVERYTHING
     // -------------------------------------------------------------
     function positionAll(step, targetEl) {
         const tooltip = document.getElementById('tutTooltip');
         const highlight = document.getElementById('tutHighlight');
-        const arrow = document.getElementById('ttArrow');
         const overlay = document.getElementById('tutOverlay');
-        if (!tooltip || !highlight || !arrow || !overlay) return;
+        if (!tooltip || !highlight || !overlay) return;
 
         tooltip.classList.remove('centered');
         highlight.classList.remove('active');
         highlight.style.display = 'none';
         hideMasks();
 
-        // Centered info step (no target)
         if (!targetEl) {
             overlay.classList.add('active');
             tooltip.style.left = '50%';
@@ -556,7 +540,6 @@
         const rect = targetEl.getBoundingClientRect();
         const pad = 8;
 
-        // Highlight ring
         highlight.style.left = (rect.left - pad) + 'px';
         highlight.style.top = (rect.top - pad) + 'px';
         highlight.style.width = (rect.width + pad * 2) + 'px';
@@ -564,10 +547,8 @@
         highlight.classList.add('active');
         highlight.style.display = 'block';
 
-        // Masks (four panels around the target)
         positionMasks(rect, pad);
 
-        // Decide tooltip placement
         const vw = window.innerWidth;
         const vh = window.innerHeight;
         const tipW = 420;
@@ -575,14 +556,13 @@
 
         let ttLeft = rect.left + rect.width / 2 - tipW / 2;
         let ttTop  = rect.bottom + 22;
-        let arrowDir = 'top';        // tooltip BELOW target → arrow on TOP edge, points UP
+        let arrowDir = 'top';
 
         if (ttTop + tipH > vh - 10) {
             ttTop = rect.top - tipH - 22;
-            arrowDir = 'bottom';     // tooltip ABOVE target → arrow on BOTTOM edge, points DOWN
+            arrowDir = 'bottom';
         }
         if (ttTop < 10) {
-            // No room above or below — centre the tooltip, hide arrow
             tooltip.style.left = '50%';
             tooltip.style.top = '50%';
             tooltip.style.transform = 'translate(-50%, -50%)';
@@ -597,11 +577,9 @@
         tooltip.style.transform = 'none';
         tooltip.classList.add('active');
 
-        // Point the arrow at the target's horizontal centre
         const targetCenterX = rect.left + rect.width / 2;
         positionArrow(targetCenterX, arrowDir);
 
-        // Auto-scroll if the target is off-screen
         if (rect.top < 0 || rect.bottom > vh) {
             targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
@@ -612,7 +590,6 @@
         positionAll(step, targetEl);
     }
 
-    // Throttled re-position on scroll / resize
     function scheduleReposition() {
         if (!active) return;
         if (repositionPending) return;
@@ -645,10 +622,8 @@
                 if (clickWatcher.verifying) return;
                 clickWatcher.verifying = true;
 
-                // Let the app's own handler run first
                 await sleep(180);
 
-                // Run the step's verify predicate (sync or async)
                 if (step.verify) {
                     let ok = false;
                     try {
@@ -798,7 +773,7 @@
     });
 
     // -------------------------------------------------------------
-    //  INIT  (auto-start for new accounts)
+    //  BOOT  — auto-start for brand-new accounts
     // -------------------------------------------------------------
     function boot() {
         currentTutUser = localStorage.getItem('currentUser');
@@ -807,43 +782,58 @@
         ensureDom();
 
         const seenKey = 'tutorial_seen_' + currentTutUser;
-        const alreadySeen = localStorage.getItem(seenKey);
-
-        if (alreadySeen) {
+        if (localStorage.getItem(seenKey)) {
             console.log('[tutorial] User has already seen the tour. Use the "?" button to replay.');
             return;
         }
 
-        console.log('[tutorial] New user detected — queuing tutorial for', currentTutUser);
+        console.log('[tutorial] New user detected — waiting for dashboard to be ready...');
 
-        // Poll for up to 6 seconds for the app shell to be actually visible.
-        // `offsetParent !== null` is the reliable "is this on-screen" check.
-        let attempts = 0;
-        const MAX_ATTEMPTS = 30;   // 30 * 200ms = 6s
+        let started = false;
+        const go = (reason) => {
+            if (started) return;
+            started = true;
+            console.log('[tutorial] Starting tour (' + reason + ')');
+            // Short delay so the dashboard can finish any post-render work
+            setTimeout(() => start(false), 300);
+        };
 
-        const poll = setInterval(() => {
-            attempts++;
-            const main = document.getElementById('mainApp');
-            const isVisible = main && main.offsetParent !== null;
+        // --- 1. If the dashboard is already rendered, start immediately ---
+        const isDashboardReady = () => {
+            const titleEl = document.getElementById('pageTitle');
+            const container = document.getElementById('pageContainer');
+            return titleEl
+                && titleEl.textContent.trim().toLowerCase() === 'dashboard'
+                && container
+                && container.children.length > 0
+                && container.querySelector('.dashboard-page, .stats-grid');
+        };
 
-            if (isVisible) {
-                clearInterval(poll);
-                console.log('[tutorial] App shell visible — starting tour.');
-                // Small extra delay so the dashboard finishes its own render
-                setTimeout(() => start(false), 400);
-            } else if (attempts >= MAX_ATTEMPTS) {
-                clearInterval(poll);
-                console.warn('[tutorial] Timed out waiting for app shell; not starting.');
-            }
-        }, 200);
+        if (isDashboardReady()) {
+            go('dashboard already rendered');
+            return;
+        }
+
+        // --- 2. Otherwise, listen for the pageLoaded event dispatched by app.js ---
+        const onDashboardLoaded = function (e) {
+            if (!e.detail || e.detail.page !== 'dashboard') return;
+            document.removeEventListener('pageLoaded', onDashboardLoaded);
+            go('dashboard loaded event');
+        };
+        document.addEventListener('pageLoaded', onDashboardLoaded);
+
+        // --- 3. Final safety net: start after 3s no matter what ---
+        setTimeout(() => go('safety timeout'), 3000);
     }
 
+    // Run boot() once the DOM is ready (script is loaded at end of body)
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', boot);
     } else {
         boot();
     }
 
+    // Expose for manual triggering / testing
     window.startTutorial = () => start(true);
     window.skipTutorial = skipTour;
 
